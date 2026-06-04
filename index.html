@@ -69,9 +69,12 @@ body{
 .pin-logo svg path,.pin-logo svg polygon{fill:#fff}
 .pin-title{font-family:'Rubik',sans-serif;font-size:18px;font-weight:800;color:#fff;letter-spacing:-.3px}
 .pin-hint{color:#8b90a0;font-size:13px;margin-top:-8px}
+.pin-field{min-width:230px;padding:16px 22px;background:#181b22;border:1.5px solid #2d323d;border-radius:14px;cursor:text;display:flex;align-items:center;justify-content:center;transition:border-color .15s;min-height:22px}
+.pin-field:hover{border-color:#3a4250}
+.pin-field.active{border-color:#f59e0b}
+.pin-placeholder{color:#8b90a0;font-size:14px}
 #pinInput{position:absolute;opacity:0;width:1px;height:1px;font-size:16px;top:50%;left:50%;border:none;background:transparent;outline:none}
-.pin-dots{cursor:pointer;display:flex;gap:14px}
-.pin-dots{display:flex;gap:14px}
+.pin-dots{cursor:pointer;display:flex;gap:14px;direction:ltr}
 .pin-dots span{width:15px;height:15px;border-radius:50%;border:2px solid #3a4250;transition:all .15s}
 .pin-dots span.filled{background:#f59e0b;border-color:#f59e0b;transform:scale(1.1)}
 .pin-dots span.error{background:#f87171;border-color:#f87171}
@@ -99,8 +102,8 @@ body{
 .deliv-bar{display:flex;align-items:center;gap:9px;margin-bottom:14px}
 .deliv-lab{font-size:13px;color:#9097a6}
 /* ===== RATES BAR (home default rates) ===== */
-.rates-bar{background:#181b22;border:1px solid #262a33;border-radius:10px;padding:8px 13px;position:relative}
-.rb-editor{position:absolute;right:0;top:calc(100% + 8px);background:#181b22;border:1px solid #2d323d;border-radius:12px;padding:13px;z-index:40;min-width:270px;box-shadow:0 18px 44px -14px #000;display:flex;flex-direction:column;gap:9px}
+.rates-bar{background:#181b22;border:1px solid #262a33;border-radius:12px;padding:11px 14px;margin-bottom:14px;position:relative}
+.rb-editor{margin-top:12px;padding-top:12px;border-top:1px solid #21252e;display:flex;flex-direction:column;gap:9px}
 .rb-header{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
 .rb-icon{font-size:15px;flex:none}
 .rb-chips{display:flex;gap:12px;flex:1;flex-wrap:wrap;align-items:center}
@@ -323,9 +326,11 @@ textarea.inp{resize:vertical;min-height:62px;line-height:1.5}
   <div class="pin-box">
     <div class="pin-logo" id="pinLogo"></div>
     <div class="pin-title">מחשבון יבוא רכבים</div>
-    <div class="pin-hint">הזן קוד גישה</div>
-    <div class="pin-dots" id="pinDots">
-      <span></span><span></span><span></span><span></span><span></span><span></span>
+    <div class="pin-field" id="pinField">
+      <span class="pin-placeholder" id="pinPlaceholder">הזן קוד גישה</span>
+      <div class="pin-dots" id="pinDots" style="display:none">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
     </div>
     <div class="pin-error" id="pinError"></div>
     <input id="pinInput" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" aria-label="קוד גישה">
@@ -343,6 +348,10 @@ textarea.inp{resize:vertical;min-height:62px;line-height:1.5}
         <div class="sub">כל הזכויות שמורות לרון אוחיון</div>
       </div>
     </div>
+  </div>
+
+  <!-- ================= HOME ================= -->
+  <div id="homeView">
     <div class="rates-bar" id="ratesBar">
       <div class="rb-header" id="rbHeader">
         <span class="rb-icon">💱</span>
@@ -351,10 +360,6 @@ textarea.inp{resize:vertical;min-height:62px;line-height:1.5}
       </div>
       <div class="rb-editor" id="rbEditor" style="display:none"></div>
     </div>
-  </div>
-
-  <!-- ================= HOME ================= -->
-  <div id="homeView">
     <div class="home-top">
       <div class="ttl">הרכבים שלי <small id="homeCount"></small></div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -487,7 +492,16 @@ function loadDefaultRates(){
   return {ILS:1, USD:2.855, CAD:2.066, EUR:3.1};
 }
 function saveDefaultRates(r){
-  try{ const o={}; FETCHABLE.forEach(c=>{ if(r[c]) o[c]=r[c]; }); localStorage.setItem(RATES_KEY,JSON.stringify(o)); }catch(e){}
+  const o={}; FETCHABLE.forEach(c=>{ if(r[c]) o[c]=r[c]; });
+  try{ localStorage.setItem(RATES_KEY,JSON.stringify(o)); }catch(e){}
+  syncDefaultRatesToSupabase(o);
+}
+async function syncDefaultRatesToSupabase(o){
+  if(!sb) return;
+  try{
+    const { error } = await sb.from('settings').upsert({key:'default_rates', value:JSON.stringify(o)}, {onConflict:'key'});
+    if(error) throw error;
+  }catch(e){ console.error('Supabase default-rates sync error', e); showToast('סנכרון שערים נכשל - נשמר מקומית'); }
 }
 async function fetchRatesRaw(){
   let res=null;
@@ -702,6 +716,15 @@ async function initSupabaseStorage(){
     } else if(tagRes.error){
       console.error("Supabase tags load error", tagRes.error);
     }
+
+    // שערי ברירת מחדל מסונכרנים
+    try{
+      const rRes = await sb.from("settings").select("value").eq("key","default_rates").single();
+      if(!rRes.error && rRes.data && rRes.data.value){
+        const parsed = typeof rRes.data.value === "string" ? JSON.parse(rRes.data.value) : rRes.data.value;
+        if(parsed && typeof parsed === "object") safeLocalWrite(RATES_KEY, parsed);
+      }
+    }catch(e){ /* אין שורת default_rates עדיין */ }
   }catch(e){
     console.error("Supabase init error", e);
     showToast("לא הצלחתי לטעון מהענן - עובד מגיבוי מקומי");
@@ -1136,9 +1159,12 @@ function duplicateVehicle(id){
   const copy=JSON.parse(JSON.stringify(o));
   copy.id=newId(); copy.carName=(o.carName||"רכב")+" (עותק)";
   copy.chassis=""; copy.notes="";
+  copy.delivered=false;
+  const checkTag=createTag("בדיקת מחיר");
+  copy.tags = checkTag ? [checkTag.id] : [];
   copy.savedAt=Date.now();
   arr.push(copy); persistSaved(arr);
-  showToast("נוצר עותק"); renderHome();
+  showToast("נוצר עותק עם תג בדיקת מחיר"); renderHome();
 }
 function deleteVehicle(id){ persistSaved(loadSaved().filter(v=>v.id!==id)); renderHome(); }
 
@@ -1367,9 +1393,14 @@ function setupPinScreen(){
   }
 
   const input = document.getElementById('pinInput');
+  const field = document.getElementById('pinField');
+  const placeholder = document.getElementById('pinPlaceholder');
   const dotsWrap = document.getElementById('pinDots');
   const dots = Array.from(dotsWrap.querySelectorAll('span'));
   const err = document.getElementById('pinError');
+
+  function showDots(){ placeholder.style.display='none'; dotsWrap.style.display='flex'; field.classList.add('active'); }
+  function maybeHideDots(){ if((input.value||'').length===0){ placeholder.style.display='block'; dotsWrap.style.display='none'; field.classList.remove('active'); } }
 
   const badgeSvg = document.querySelector('.badge svg');
   const pinLogo = document.getElementById('pinLogo');
@@ -1420,14 +1451,14 @@ function setupPinScreen(){
     }
   }
 
-  dotsWrap.onclick = ()=>input.focus();
-  screen.onclick = ()=>input.focus();
+  field.onclick = ()=>{ input.focus(); showDots(); };
+  screen.onclick = (e)=>{ if(e.target===screen){ input.focus(); showDots(); } };
+  input.addEventListener('focus', showDots);
+  input.addEventListener('blur', maybeHideDots);
   input.addEventListener('input', tryPin);
   input.addEventListener('keydown', e=>{
     if(e.key === 'Enter') tryPin();
   });
-
-  setTimeout(()=>input.focus(), 250);
 }
 
 setupPinScreen();
