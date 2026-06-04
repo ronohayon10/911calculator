@@ -655,6 +655,16 @@ let sb = null;
 let savedCache = [];
 let tagsCache = [];
 
+function initSupabaseClient(){
+  if(sb) return sb;
+  if(!window.supabase){
+    showToast("Supabase לא נטען");
+    return null;
+  }
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  return sb;
+}
+
 function safeLocalRead(key){
   try{ return JSON.parse(localStorage.getItem(key)) || []; }catch(e){ return []; }
 }
@@ -665,12 +675,11 @@ async function initSupabaseStorage(){
   savedCache = safeLocalRead(LS_KEY);
   tagsCache = safeLocalRead(TAGS_KEY);
 
-  if(!window.supabase){
+  sb = initSupabaseClient();
+  if(!sb){
     showToast("Supabase לא נטען - עובד מגיבוי מקומי");
     return;
   }
-
-  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   try{
     const [vehRes, tagRes] = await Promise.all([
@@ -1310,72 +1319,90 @@ function importData(){
   inp.click();
 }
 
-/* ===================== PIN AUTH ===================== */
-const AUTH_KEY  = 'v911vip_auth';
-const AUTH_TTL  = 24 * 60 * 60 * 1000; // 24 שעות
-const PIN_HASH  = '1dd3288955c469ab7ffd582d0217813a8ae16f4e3d05a5bd98db4b91014dd8b0';
-let pinEntry = '';
+/* ===================== PIN דרך Supabase Settings ===================== */
+let pinBusy = false;
 
-function checkAuth(){
-  try{ const t=localStorage.getItem(AUTH_KEY); return t && Date.now()-parseInt(t)<AUTH_TTL; }
-  catch(e){ return false; }
+async function checkPinFromSupabase(pin){
+  const client = initSupabaseClient();
+  if(!client) throw new Error('Supabase לא נטען');
+
+  const { data, error } = await client
+    .from('settings')
+    .select('value')
+    .eq('key', 'pin')
+    .single();
+
+  if(error) throw error;
+  return String((data && data.value) || '') === String(pin);
 }
-async function sha256(str){
-  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
-}
-function updateDots(){
-  document.querySelectorAll('#pinDots span').forEach((s,i)=>{ s.className=i<pinEntry.length?'filled':''; });
-}
-async function pinInput(d){
-  if(pinEntry.length>=6) return;
-  pinEntry+=d; updateDots();
-  if(pinEntry.length===6){
-    const h=await sha256(pinEntry);
-    if(h===PIN_HASH){
-      try{ localStorage.setItem(AUTH_KEY,Date.now().toString()); }catch(e){}
-      document.getElementById('pinScreen').style.display='none';
-      init();
-    } else {
-      const dots=document.getElementById('pinDots');
-      dots.querySelectorAll('span').forEach(s=>s.className='error');
-      dots.classList.add('shake');
-      document.getElementById('pinError').textContent='קוד שגוי, נסה שוב';
-      setTimeout(()=>{ dots.classList.remove('shake'); pinEntry=''; updateDots(); document.getElementById('pinError').textContent=''; },500);
+
+function setupPinScreen(){
+  const screen = document.getElementById('pinScreen');
+  const input = document.getElementById('pinInput');
+  const dotsWrap = document.getElementById('pinDots');
+  const dots = Array.from(dotsWrap.querySelectorAll('span'));
+  const err = document.getElementById('pinError');
+
+  const badgeSvg = document.querySelector('.badge svg');
+  const pinLogo = document.getElementById('pinLogo');
+  if(badgeSvg && pinLogo) pinLogo.innerHTML = badgeSvg.outerHTML;
+
+  function renderDots(val){
+    dots.forEach((d,i)=>{
+      d.classList.toggle('filled', i < val.length);
+      d.classList.remove('error');
+    });
+  }
+
+  function showError(msg){
+    err.textContent = msg || 'קוד שגוי';
+    dots.forEach(d=>d.classList.add('error'));
+    dotsWrap.classList.remove('shake');
+    void dotsWrap.offsetWidth;
+    dotsWrap.classList.add('shake');
+    setTimeout(()=>{
+      input.value='';
+      renderDots('');
+      input.focus();
+    }, 450);
+  }
+
+  async function tryPin(){
+    if(pinBusy) return;
+    const pin = (input.value || '').replace(/\D/g,'').slice(0,6);
+    input.value = pin;
+    renderDots(pin);
+    err.textContent = '';
+    if(pin.length !== 6) return;
+
+    pinBusy = true;
+    try{
+      const ok = await checkPinFromSupabase(pin);
+      if(ok){
+        screen.style.display = 'none';
+        await init();
+      }else{
+        showError('קוד שגוי');
+      }
+    }catch(e){
+      console.error('PIN check error', e);
+      showError('לא ניתן לבדוק קוד כרגע');
+    }finally{
+      pinBusy = false;
     }
   }
-}
-function pinBack(){ if(pinEntry.length){ pinEntry=pinEntry.slice(0,-1); updateDots(); } }
-function buildPin(){
-  // העתק לוגו מה-badge שבכותרת
-  const badgeSvg=document.querySelector('.badge svg');
-  if(badgeSvg){ const pl=document.getElementById('pinLogo'); if(pl) pl.innerHTML=badgeSvg.outerHTML; }
-  // הגדרת input
-  const inp=document.getElementById('pinInput');
-  const dotsEl=document.getElementById('pinDots');
-  dotsEl.addEventListener('click',()=>inp.focus());
-  inp.addEventListener('input',async ()=>{
-    const val=inp.value.replace(/\D/g,'').slice(0,6);
-    inp.value=val; pinEntry=val; updateDots();
-    if(val.length===6){
-      const h=await sha256(val);
-      if(h===PIN_HASH){
-        try{ localStorage.setItem(AUTH_KEY,Date.now().toString()); }catch(e){}
-        document.getElementById('pinScreen').style.display='none';
-        init();
-      } else {
-        dotsEl.querySelectorAll('span').forEach(s=>s.className='error');
-        dotsEl.classList.add('shake');
-        document.getElementById('pinError').textContent='קוד שגוי, נסה שוב';
-        setTimeout(()=>{ dotsEl.classList.remove('shake'); inp.value=''; pinEntry=''; updateDots(); document.getElementById('pinError').textContent=''; },500);
-      }
-    }
+
+  dotsWrap.onclick = ()=>input.focus();
+  screen.onclick = ()=>input.focus();
+  input.addEventListener('input', tryPin);
+  input.addEventListener('keydown', e=>{
+    if(e.key === 'Enter') tryPin();
   });
-  // פוקוס ראשוני (עם השהייה קלה לאחר render)
-  setTimeout(()=>inp.focus(),300);
+
+  setTimeout(()=>input.focus(), 250);
 }
-buildPin();
-if(checkAuth()){ document.getElementById('pinScreen').style.display='none'; init(); }
+
+setupPinScreen();
 
 async function init(){
   await initSupabaseStorage();
