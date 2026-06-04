@@ -103,6 +103,10 @@ body{
 .deliv-lab{font-size:13px;color:#9097a6}
 /* ===== RATES BAR (home default rates) ===== */
 .rates-bar{background:#181b22;border:1px solid #262a33;border-radius:12px;padding:11px 14px;margin-bottom:14px;position:relative}
+.rates-bar.compact{margin-bottom:0;padding:8px 13px;border-radius:10px}
+.rates-bar.compact .rb-editor{position:absolute;right:0;top:calc(100% + 8px);background:#181b22;border:1px solid #2d323d;border-radius:12px;padding:13px;z-index:40;min-width:270px;box-shadow:0 18px 44px -14px #000;margin-top:0}
+.rb-done-btn{width:100%;background:#f59e0b;color:#1a1205;border:none;border-radius:8px;padding:10px;font-family:'Rubik';font-weight:700;font-size:14px;cursor:pointer;margin-top:5px}
+.rb-done-btn:hover{background:#fbb43a}
 .rb-editor{margin-top:12px;padding-top:12px;border-top:1px solid #21252e;display:flex;flex-direction:column;gap:9px}
 .rb-header{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
 .rb-icon{font-size:15px;flex:none}
@@ -348,17 +352,20 @@ textarea.inp{resize:vertical;min-height:62px;line-height:1.5}
         <div class="sub">כל הזכויות שמורות לרון אוחיון</div>
       </div>
     </div>
+    <div id="ratesHeaderSlot"></div>
   </div>
 
   <!-- ================= HOME ================= -->
   <div id="homeView">
-    <div class="rates-bar" id="ratesBar">
-      <div class="rb-header" id="rbHeader">
-        <span class="rb-icon">💱</span>
-        <div class="rb-chips" id="rbChips"></div>
-        <span class="rb-arrow" id="rbArrow">▸</span>
+    <div id="ratesHomeSlot">
+      <div class="rates-bar" id="ratesBar">
+        <div class="rb-header" id="rbHeader">
+          <span class="rb-icon">💱</span>
+          <div class="rb-chips" id="rbChips"></div>
+          <span class="rb-arrow" id="rbArrow">▸</span>
+        </div>
+        <div class="rb-editor" id="rbEditor" style="display:none"></div>
       </div>
-      <div class="rb-editor" id="rbEditor" style="display:none"></div>
     </div>
     <div class="home-top">
       <div class="ttl">הרכבים שלי <small id="homeCount"></small></div>
@@ -486,6 +493,13 @@ const TAGS_KEY  = "v911vip_tags";
 const RATES_KEY = "v911vip_rates";   // שערי ברירת מחדל
 
 let ratesBarOpen = false;
+function placeRatesBar(){
+  const bar=document.getElementById('ratesBar'); if(!bar) return;
+  const desktop = window.innerWidth > 700;
+  const slot = document.getElementById(desktop ? 'ratesHeaderSlot' : 'ratesHomeSlot');
+  if(slot && bar.parentElement!==slot) slot.appendChild(bar);
+  bar.classList.toggle('compact', desktop);
+}
 
 function loadDefaultRates(){
   try{ const s=localStorage.getItem(RATES_KEY); if(s){ return Object.assign({ILS:1},JSON.parse(s)); } }catch(e){}
@@ -564,6 +578,9 @@ function renderRatesBar(){
     fa.disabled=false; fa.classList.remove('spin');
   };
   fetchRow.appendChild(fa); ed.appendChild(fetchRow);
+  const doneBtn=document.createElement('button'); doneBtn.className='rb-done-btn'; doneBtn.textContent='שמירה';
+  doneBtn.onclick=()=>{ ratesBarOpen=false; renderRatesBar(); };
+  ed.appendChild(doneBtn);
 }
 const TAG_COLORS = ["#f59e0b","#34d399","#60a5fa","#f472b6","#a78bfa","#fb923c","#2dd4bf","#facc15","#f87171","#818cf8"];
 const REFRESH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>';
@@ -1483,6 +1500,8 @@ async function init(){
   document.getElementById("importBtn").onclick = importData;
   document.getElementById("showDelivered").onchange = e=>{ showDelivered=e.target.checked; renderHome(); };
   document.getElementById("rbHeader").onclick = ()=>{ ratesBarOpen=!ratesBarOpen; renderRatesBar(); };
+  placeRatesBar();
+  window.addEventListener('resize', placeRatesBar);
   document.getElementById("backBtn").onclick   = backFromEdit;
   document.getElementById("vBack").onclick     = showHome;
   document.getElementById("homeLink").onclick  = showHome;
