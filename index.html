@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>911VIP · מחשבון עלויות יבוא רכב</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rubik:wght@300;400;500;600;700;800;900&family=Heebo:wght@300;400;500;700&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  direction:rtl;
+  font-family:'Heebo',sans-serif;
+  background:
+    radial-gradient(1200px 600px at 85% -10%, rgba(245,158,11,.10), transparent 60%),
+    radial-gradient(900px 500px at 0% 110%, rgba(16,185,129,.08), transparent 55%),
+    #0c0e12;
+  color:#e7e9ee;
+  min-height:100vh;
+  padding:28px 18px 60px;
+  font-variant-numeric:tabular-nums;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1080px;margin:0 auto}
+
+.head{display:flex;align-items:center;gap:13px;margin-bottom:24px;cursor:pointer;width:fit-content;transition:opacity .15s}
+.head:hover{opacity:.85}
+.badge{width:50px;height:62px;display:flex;align-items:center;justify-content:center;flex:none}
+.badge svg{width:100%;height:100%;display:block}
+.title{font-family:'Rubik',sans-serif;font-weight:800;font-size:27px;letter-spacing:-.5px;line-height:1.12;color:#fff;width:fit-content}
+.title span{color:#fff}
+.sub{color:#8b90a0;font-size:13px;margin-top:6px;max-width:540px;line-height:1.5}
+
+/* ===== generic ===== */
+.card{
+  background:linear-gradient(180deg,#181b22,#15171d);
+  border:1px solid #262a33;border-radius:16px;padding:20px;
+  box-shadow:0 14px 40px -22px rgba(0,0,0,.9);
+}
+.card + .card{margin-top:18px}
+.card-h{display:flex;align-items:center;gap:9px;margin-bottom:16px}
+.card-h .dot{width:8px;height:8px;border-radius:50%;background:#f59e0b;box-shadow:0 0 10px #f59e0b}
+.card-h h2{font-family:'Rubik',sans-serif;font-weight:600;font-size:15px;letter-spacing:.3px;color:#cfd3de}
+
+.btn{border:none;border-radius:10px;padding:12px;font-family:'Rubik';font-weight:600;font-size:14px;cursor:pointer;transition:.15s}
+.btn-primary{background:#f59e0b;color:#1a1205}
+.btn-primary:hover{background:#fbb234}
+.btn-ghost{background:#1e222b;color:#cfd3de;border:1px solid #2d323d}
+.btn-ghost:hover{border-color:#4a5160}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(40px);background:#1c2128;border:1px solid #34d39955;color:#34d399;padding:12px 22px;border-radius:11px;font-weight:600;font-size:14px;opacity:0;transition:.3s;pointer-events:none;z-index:50;box-shadow:0 14px 40px -16px #000}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ===== HOME ===== */
+.home-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;gap:12px;flex-wrap:wrap}
+.home-top .ttl{font-family:'Rubik';font-weight:700;font-size:18px;color:#cfd3de}
+.home-top .ttl small{color:#6f7585;font-weight:400;font-size:13px;margin-inline-start:8px}
+.btn-xs{background:#16181e;border:1px solid #2d323d;color:#9aa0b0;border-radius:8px;padding:7px 12px;font-size:12.5px;font-family:'Heebo';cursor:pointer;transition:.12s}
+.btn-xs:hover{border-color:#f59e0b;color:#f59e0b}
+
+/* ===== PIN SCREEN ===== */
+.pin-box{display:flex;flex-direction:column;align-items:center;gap:20px;position:relative}
+.pin-logo{width:52px;height:64px}
+.pin-logo svg{width:100%;height:100%;display:block}
+.pin-logo svg path,.pin-logo svg polygon{fill:#fff}
+.pin-title{font-family:'Rubik',sans-serif;font-size:18px;font-weight:800;color:#fff;letter-spacing:-.3px}
+.pin-hint{color:#8b90a0;font-size:13px;margin-top:-8px}
+#pinInput{position:absolute;opacity:0;width:1px;height:1px;font-size:16px;top:50%;left:50%;border:none;background:transparent;outline:none}
+.pin-dots{cursor:pointer;display:flex;gap:14px}
+.pin-dots{display:flex;gap:14px}
+.pin-dots span{width:15px;height:15px;border-radius:50%;border:2px solid #3a4250;transition:all .15s}
+.pin-dots span.filled{background:#f59e0b;border-color:#f59e0b;transform:scale(1.1)}
+.pin-dots span.error{background:#f87171;border-color:#f87171}
+@keyframes pinShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-10px)}40%{transform:translateX(10px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+.pin-dots.shake{animation:pinShake .35s ease}
+.pin-error{color:#f87171;font-size:13px;min-height:18px;text-align:center}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(244px,1fr));gap:14px}
+.vcard{background:linear-gradient(180deg,#181b22,#15171d);border:1px solid #262a33;border-radius:14px;padding:16px;display:flex;flex-direction:column;transition:.15s;position:relative}
+.vcard:hover{border-color:#3a4250}
+.vc-foot{display:flex;align-items:center;gap:10px;padding-top:10px;margin-top:12px;border-top:1px solid #21252e}
+.vc-foot-tags{display:flex;flex-wrap:wrap;gap:10px;align-items:center;min-width:0}
+.vc-tag-add{background:transparent;border:1px dashed #3a4250;color:#8b90a0;border-radius:999px;padding:3px 10px;font-size:11.5px;font-family:'Heebo';cursor:pointer;transition:.12s;line-height:1.4}
+.vc-tag-add:hover{border-color:#f59e0b;color:#f59e0b}
+.vc-tag-add.mini{padding:2px 8px;font-size:13px;font-weight:700;line-height:1}
+.vc-tag-add.close{border-style:solid;border-color:#f59e0b;color:#f59e0b;padding:3px 11px;font-size:11.5px;font-weight:600}
+.tag-pop.card-pop{position:static;margin-top:12px;right:auto;left:auto;box-shadow:none;background:#14161c}
+.tag-mini{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-family:'Heebo';font-weight:600;line-height:1}
+.tag-mini svg{width:13px;height:13px;flex:none}
+.vc-date{font-size:10.5px;color:#5f6573;font-variant-numeric:tabular-nums;letter-spacing:.2px;white-space:nowrap;flex:none;margin-inline-start:auto}
+.vc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.vc-name{font-family:'Rubik';font-weight:700;font-size:17px;color:#fff;line-height:1.2;word-break:break-word;flex:1;min-width:0}
+.vc-name.deliv{color:#34d399}
+.vc-deliv-badge{flex:none;font-size:11px;font-weight:700;color:#34d399;background:rgba(52,211,153,.13);border:1px solid rgba(52,211,153,.45);border-radius:999px;padding:3px 9px;white-space:nowrap;margin-top:2px}
+.vcard.delivered{border-color:rgba(52,211,153,.32)}
+.deliv-bar{display:flex;align-items:center;gap:9px;margin-bottom:14px}
+.deliv-lab{font-size:13px;color:#9097a6}
+.sw-sm{width:36px;height:20px}
+.sw-sm .knob{width:14px;height:14px;top:3px;right:3px}
+.sw-sm input:checked + .track{background:#34d399}
+.sw-sm input:checked + .track + .knob{right:19px}
+.vv-deliv-btn{width:100%;margin-top:16px;border:1px solid #2d323d;background:#16181e;color:#9aa0b0;border-radius:10px;padding:11px;font-family:'Rubik';font-weight:600;font-size:14px;cursor:pointer;transition:.15s}
+.vv-deliv-btn:hover{border-color:#34d399;color:#34d399}
+.vv-deliv-btn.on{background:rgba(52,211,153,.13);border-color:rgba(52,211,153,.5);color:#34d399}
+.vc-chassis{font-size:12px;color:#7e8493;margin-top:4px;font-variant-numeric:tabular-nums;word-break:break-all}
+.vc-notes{font-size:13px;color:#aeb3c0;margin-top:9px;line-height:1.45;white-space:pre-wrap}
+.vc-sep{height:1px;background:#262a33;margin:auto 0 11px}
+.vc-stat{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:#9097a6;margin-bottom:5px}
+.vc-stat b{font-family:'Rubik';font-variant-numeric:tabular-nums;font-size:14px}
+.vc-pct{font-size:11px;color:#7e8493;margin-top:2px;text-align:left}
+.vc-actions{display:flex;gap:7px;margin-top:14px}
+.vc-btn{flex:1;border:1px solid #2d323d;background:#16181e;color:#cfd3de;border-radius:8px;padding:8px 0;font-size:12.5px;font-family:'Heebo';font-weight:500;cursor:pointer;transition:.15s}
+.vc-btn:hover{border-color:#f59e0b;color:#f59e0b}
+.vc-btn.danger:hover{border-color:#f87171;color:#f87171}
+.home-empty{text-align:center;padding:60px 20px;color:#6f7585}
+.home-empty .big{font-family:'Rubik';font-size:18px;color:#9097a6;margin-bottom:18px}
+
+/* ===== TAGS ===== */
+.tag-pill{display:inline-flex;align-items:center;gap:6px;background:#0e1015;border:1px solid var(--tc,#888);color:#e7e9ee;border-radius:999px;padding:4px 10px;font-size:12px;font-family:'Heebo';line-height:1.4;white-space:nowrap}
+.tag-pill .tp-dot{width:7px;height:7px;border-radius:50%;background:var(--tc,#888);flex:none}
+.tag-pill.click{cursor:pointer;transition:.12s}
+.tp-x{background:none;border:none;color:#8b90a0;cursor:pointer;font-size:15px;line-height:1;padding:0;margin-inline-start:1px}
+.tp-x:hover{color:#f87171}
+.tags-edit{display:flex;flex-wrap:wrap;gap:7px;align-items:center;position:relative}
+.tag-add{background:#16181e;border:1px dashed #3a4250;color:#9aa0b0;border-radius:999px;padding:5px 12px;font-size:12.5px;font-family:'Heebo';cursor:pointer;transition:.12s}
+.tag-add:hover{border-color:#f59e0b;color:#f59e0b}
+.tag-pop{position:absolute;top:calc(100% + 8px);right:0;left:0;background:#1a1d24;border:1px solid #2d323d;border-radius:12px;padding:12px;z-index:30;box-shadow:0 18px 44px -18px #000}
+.tag-new{display:flex;gap:8px;margin-bottom:10px}
+.tag-new .cell{flex:1}
+.tag-new-btn{background:#f59e0b;color:#1a1205;border:none;border-radius:9px;padding:0 16px;font-family:'Rubik';font-weight:600;font-size:13px;cursor:pointer;flex:none}
+.swatches{display:flex;flex-wrap:wrap;gap:7px}
+.swatches.new-swatch{padding-bottom:11px;margin-bottom:11px;border-bottom:1px solid #262a33}
+.swatch{width:22px;height:22px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0;transition:transform .1s;box-shadow:inset 0 0 0 1px rgba(0,0,0,.25)}
+.swatch:hover{transform:scale(1.15)}
+.swatch.sel{border-color:#fff;box-shadow:0 0 0 1px #0c0e12}
+.tag-color-btn{width:18px;height:18px;border-radius:50%;border:1px solid rgba(255,255,255,.25);cursor:pointer;padding:0;flex:none;transition:.12s}
+.tag-color-btn:hover,.tag-color-btn.active{box-shadow:0 0 0 2px rgba(255,255,255,.4)}
+.edit-swatch{padding:8px 2px 4px}
+.tag-list{display:flex;flex-direction:column;gap:6px;max-height:230px;overflow:auto}
+.tag-item{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tag-item .tag-pill{opacity:.5}
+.tag-item .tag-pill.sel{opacity:1}
+.tag-del{background:none;border:none;color:#6f7585;font-size:12px;cursor:pointer;font-family:'Heebo';flex:none}
+.tag-del:hover{color:#f87171}
+.tag-empty{color:#6f7585;font-size:12.5px;text-align:center;padding:8px 4px}
+.tag-filter{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.filter-chip{display:inline-flex;align-items:center;gap:6px;background:#16181e;border:1px solid #2d323d;color:#cfd3de;border-radius:999px;padding:6px 13px;font-size:13px;font-family:'Heebo';cursor:pointer;transition:.12s}
+.filter-chip .tp-dot{width:7px;height:7px;border-radius:50%;background:var(--tc,#888);flex:none}
+.filter-chip:hover{border-color:#4a5160}
+.filter-chip.active{background:rgba(245,158,11,.14);border-color:#f59e0b;color:#fff}
+.vc-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.vv-tags{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+
+/* ===== CALC ===== */
+.back-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.back-btn{background:#1e222b;border:1px solid #2d323d;color:#cfd3de;border-radius:9px;padding:8px 14px;font-size:13px;font-family:'Heebo';cursor:pointer;transition:.15s}
+.back-btn:hover{border-color:#f59e0b;color:#f59e0b}
+.grid{display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+
+.fld-l{font-size:12px;color:#878d9d;margin-bottom:6px;font-weight:500}
+.inp{width:100%;background:#0e1015;border:1px solid #2a2f3a;color:#fff;border-radius:10px;padding:11px 13px;font-size:15px;font-family:'Heebo',sans-serif;outline:none;transition:border-color .15s,box-shadow .15s}
+.inp:focus{border-color:#f59e0b;box-shadow:0 0 0 3px rgba(245,158,11,.12)}
+.inp.num{font-variant-numeric:tabular-nums;text-align:right}
+textarea.inp{resize:vertical;min-height:62px;line-height:1.5}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.mt{margin-top:12px}
+
+.rates{display:flex;gap:8px;flex-wrap:wrap}
+.rate{flex:1;min-width:96px;background:#0e1015;border:1px solid #2a2f3a;border-radius:10px;padding:9px 11px}
+.rate .c{font-size:11px;color:#7e8493;font-weight:600;margin-bottom:5px;display:flex;align-items:center;justify-content:space-between;gap:6px}
+.rate .lblwrap{display:flex;align-items:center;gap:6px}
+.rate .flag svg{width:21px;height:14px;border-radius:3px;display:block;box-shadow:0 0 0 1px rgba(255,255,255,.14)}
+.rate input{width:100%;background:transparent;border:none;color:#fff;font-size:16px;font-weight:600;outline:none;font-variant-numeric:tabular-nums}
+.fetch-btn{flex:none;width:26px;height:26px;border-radius:7px;border:1px solid #2d323d;background:#16181e;color:#f59e0b;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;padding:0}
+.fetch-btn:hover{border-color:#f59e0b;background:#1f1a10}
+.fetch-btn:disabled{opacity:.5;cursor:wait}
+.fetch-btn svg{width:14px;height:14px}
+.fetch-btn.spin svg{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.stamp{font-size:9.5px;margin-top:5px;line-height:1.3;min-height:12px}
+.stamp.ok{color:#5aa777}
+.stamp.mkt{color:#c9a24a}
+.stamp.err{color:#cc7777}
+.fetch-all{margin-top:12px;width:100%;background:#16181e;border:1px solid #2d323d;color:#cfd3de;border-radius:9px;padding:10px;cursor:pointer;font-family:'Heebo';font-size:13px;font-weight:500;transition:.15s;display:flex;align-items:center;justify-content:center;gap:7px}
+.fetch-all:hover{border-color:#f59e0b;color:#f59e0b}
+.fetch-all:disabled{opacity:.6;cursor:wait}
+.fetch-all svg{width:14px;height:14px}
+.fetch-all.spin svg{animation:spin .7s linear infinite}
+
+.line{display:grid;grid-template-columns:1fr 104px 82px 88px 28px 24px;gap:7px;align-items:center;margin-bottom:8px}
+.line.hdr{font-size:11px;color:#6f7585;font-weight:600;margin-bottom:8px}
+.line.hdr div{padding:0 2px}
+.cif-h{text-align:center}
+.cif-box{width:17px;height:17px;accent-color:#f59e0b;cursor:pointer;justify-self:center}
+.tax-grid{display:flex;flex-direction:column;gap:10px}
+.tax-row{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0e1015;border:1px solid #2a2f3a;border-radius:10px;padding:11px 13px}
+.tax-lab{font-size:14px;color:#e7e9ee;font-weight:500}
+.tax-lab small{display:block;font-size:11px;color:#7e8493;font-weight:400;margin-top:2px}
+.tax-sel{background:#16181e;border:1px solid #2d323d;color:#fff;border-radius:8px;padding:7px 11px;font-size:14px;font-family:'Heebo';cursor:pointer;outline:none;min-width:84px}
+.tax-sel:focus{border-color:#f59e0b}
+.mt-sale{display:block;margin-top:14px}
+.cell{background:#0e1015;border:1px solid #2a2f3a;border-radius:9px;padding:9px 11px;font-size:14px;color:#fff;outline:none;width:100%;font-family:'Heebo',sans-serif}
+.cell:focus{border-color:#f59e0b}
+.cell.num{text-align:right;font-variant-numeric:tabular-nums}
+.cell.cur{appearance:none;cursor:pointer}
+.ils-out{text-align:left;font-variant-numeric:tabular-nums;font-weight:600;color:#aeb3c0;font-size:14px;padding:0 4px;white-space:nowrap}
+.del{background:transparent;border:none;color:#5a606e;cursor:pointer;font-size:18px;line-height:1;border-radius:6px;padding:2px}
+.del:hover{color:#f87171}
+.addline{margin-top:6px;background:transparent;border:1px dashed #353b47;color:#9aa0b0;border-radius:9px;padding:9px;width:100%;cursor:pointer;font-family:'Heebo';font-size:13px;transition:.15s}
+.addline:hover{border-color:#f59e0b;color:#f59e0b}
+.note{font-size:11px;color:#6f7585;margin-top:10px;line-height:1.5}
+
+/* ===== VIEW MODE ===== */
+.view-card{max-width:560px}
+.vh{display:flex;justify-content:space-between;align-items:flex-start;gap:14px}
+.vv-name{font-family:'Rubik';font-weight:800;font-size:24px;color:#fff;line-height:1.1}
+.vv-chassis{font-size:13px;color:#7e8493;margin-top:5px;font-variant-numeric:tabular-nums;word-break:break-all}
+.vh-date{font-size:11px;color:#5f6573;white-space:nowrap;flex:none;padding-top:6px}
+.vv-notes{font-size:14px;color:#aeb3c0;margin-top:12px;line-height:1.5;white-space:pre-wrap;background:#0e1015;border:1px solid #21252e;border-radius:10px;padding:11px 13px}
+.vv-sep{height:1px;background:#262a33;margin:16px 0 4px}
+.vv-lines{margin-bottom:6px}
+.vv-tax{margin:4px 0 2px;padding-top:4px;border-top:1px dashed #262a33}
+.vv-line{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:baseline;padding:9px 0;border-bottom:1px solid #1b1f27}
+.vv-line:last-child{border-bottom:none}
+.vl-lab{color:#cfd3de;font-size:14px}
+.vl-orig{color:#6f7585;font-size:12px;font-variant-numeric:tabular-nums;text-align:left}
+.vl-ils{color:#aeb3c0;font-size:14px;font-weight:600;font-variant-numeric:tabular-nums;text-align:left;min-width:96px}
+.vv-total{display:flex;justify-content:space-between;align-items:center;background:linear-gradient(90deg,rgba(245,158,11,.16),rgba(245,158,11,.04));border:1px solid rgba(245,158,11,.35);border-radius:12px;padding:13px 16px;margin:12px 0 6px}
+.vv-total span{font-weight:600;color:#f6c873;font-size:14px}
+.vv-total b{font-family:'Rubik';font-weight:800;font-size:22px;color:#fbbf24;font-variant-numeric:tabular-nums}
+.vv-row{display:flex;justify-content:space-between;align-items:baseline;padding:9px 2px;border-bottom:1px solid #1b1f27}
+.vv-row span{color:#9097a6;font-size:14px}
+.vv-row b{font-family:'Rubik';font-weight:600;font-size:15px;color:#cfd3de;font-variant-numeric:tabular-nums}
+.vv-row.sub span,.vv-row.sub b{font-size:13px;color:#7e8493;font-weight:400}
+.vv-actions{display:flex;gap:10px;margin-top:16px}
+.vv-actions .btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px}
+.ed-ico{display:inline-flex;width:15px;height:15px}
+.ed-ico svg{width:15px;height:15px}
+
+
+.sum-row{display:flex;justify-content:space-between;align-items:baseline;padding:11px 0;border-bottom:1px solid #21252e}
+.sum-row .k{color:#9097a6;font-size:14px}
+.sum-row .v{font-family:'Rubik';font-weight:600;font-size:16px;font-variant-numeric:tabular-nums;color:#cfd3de}
+.sum-total{background:linear-gradient(90deg,rgba(245,158,11,.16),rgba(245,158,11,.04));border:1px solid rgba(245,158,11,.35);border-radius:12px;padding:14px 16px;margin:14px 0;display:flex;justify-content:space-between;align-items:center}
+.sum-total .k{font-weight:600;color:#f6c873}
+.sum-total .v{font-family:'Rubik';font-weight:800;font-size:24px;color:#fbbf24;font-variant-numeric:tabular-nums}
+
+.profit{border-radius:12px;padding:16px;margin-top:14px;text-align:center}
+.profit.pos{background:linear-gradient(180deg,rgba(16,185,129,.18),rgba(16,185,129,.05));border:1px solid rgba(16,185,129,.4)}
+.profit.neg{background:linear-gradient(180deg,rgba(248,113,113,.18),rgba(248,113,113,.05));border:1px solid rgba(248,113,113,.4)}
+.profit .lbl{font-size:13px;color:#9097a6;margin-bottom:6px}
+.profit .big{font-family:'Rubik';font-weight:900;font-size:34px;letter-spacing:-1px;font-variant-numeric:tabular-nums}
+.profit.pos .big{color:#34d399}
+.profit.neg .big{color:#f87171}
+.profit .pct{font-size:14px;font-weight:600;margin-top:4px}
+.profit.pos .pct{color:#34d399}
+.profit.neg .pct{color:#f87171}
+
+.vat-toggle{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#0e1015;border:1px solid #2a2f3a;border-radius:10px;padding:10px 13px;margin-top:10px}
+.vat-toggle .lab{font-size:13px;color:#aeb3c0}
+.sw{position:relative;width:42px;height:24px;flex:none;cursor:pointer}
+.sw input{display:none}
+.sw .track{position:absolute;inset:0;background:#2d323d;border-radius:20px;transition:.2s}
+.sw .knob{position:absolute;top:3px;right:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:.2s}
+.sw input:checked + .track{background:#f59e0b}
+.sw input:checked + .track + .knob{right:21px}
+.btn-row{display:flex;gap:10px;margin-top:14px}
+.btn-row .btn{flex:1}
+</style>
+</head>
+<body>
+<div id="pinScreen" style="position:fixed;inset:0;background:#0c0e12;z-index:1000;display:flex;align-items:center;justify-content:center">
+  <div class="pin-box">
+    <div class="pin-logo" id="pinLogo"></div>
+    <div class="pin-title">מחשבון יבוא רכבים</div>
+    <div class="pin-hint">הזן קוד גישה</div>
+    <div class="pin-dots" id="pinDots">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="pin-error" id="pinError"></div>
+    <input id="pinInput" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="off" aria-label="קוד גישה">
+  </div>
+</div>
+
+<div class="wrap">
+  <div class="head" id="homeLink" title="חזרה לעמוד הבית">
+    <div class="badge">
+      <svg viewBox="0 0 140.16 175.2" preserveAspectRatio="xMidYMid meet" fill="#fff" xmlns="http://www.w3.org/2000/svg"><g><path d="M71.16,0c2.42.88,4.1,2.82,6.15,4.27,6.31,4.46,13.65,6.99,21.45,5.73,6.35-1.03,10.94-6.24,17.32-1.84,4.25,2.92,10.33,9.09,14.26,12.82,1.8,1.7,5.93,5.21,7.14,6.99,1.88,2.76,1.61,6.16-.67,8.6-.73.78-1.98,1.49-2.77,2.26-7.56,7.32-8.52,11.06-5.8,21.39,1.69,6.41,4.41,12.71,6.28,19.12,3.99,13.64,8.06,35.84,3.65,49.42-5.05,15.53-20.21,25.06-34.79,30.39-8.81,3.22-19.63,5.95-27.27,11.54-1.35.99-3.45,3.58-4.71,3.92-3.18.85-4.9-2.3-7.12-3.92-7.69-5.6-18.43-8.33-27.27-11.54-15.05-5.46-30.52-15.46-35.16-31.7-3.65-12.77-.07-33.65,3.54-46.44,2.09-7.42,5.44-14.88,7.19-22.29,2.35-9.96.5-13.49-6.59-20.26-1.56-1.49-2.88-1.79-3.81-4.1-1.47-3.68.24-6,2.72-8.48,3.42-3.43,7.31-6.92,10.9-10.18,2.78-2.52,8.9-8.77,12.37-9.2,4.03-.49,5.25.9,8.59,2.14,10,3.69,18.86,1,27.18-4.94,1.77-1.26,3.07-3.02,5.29-3.69h1.93ZM135.85,121.51c.92-13.72-1.09-27.59-4.91-40.74-2.02-6.94-5.06-13.84-6.76-20.8-2.8-11.46-.66-16.52,7.6-24.38,1.54-1.47,4.18-2.33,2.69-5.08-4.04-3.94-8.08-7.91-12.26-11.7-1.83-1.66-7.64-7.33-9.42-8.07-3.36-1.4-6.58,1.3-9.81,2.27-11.74,3.51-23.06-.94-31.91-8.71l-1.57-.09c-8.91,7.8-20.24,12.33-32.06,8.8-5.49-1.64-6.85-4.89-12.28-.43-5.76,4.74-13.34,11.62-18.45,17.01-2.9,3.06-.02,4.12,1.93,6,8.69,8.34,10.52,13.32,7.36,25.34-1.9,7.22-4.98,14.27-7,21.52-2.68,9.64-4.37,19.8-4.68,29.83-.1,3.07-.02,6.19.25,9.24h40.49v1.92H4.79c2.37,12,11.36,20.84,21.64,26.65,12.3,6.94,27.05,8.86,38.95,16.64,1.83,1.2,3.25,2.51,4.9,3.92,12.2-11.37,30.08-12.65,44.16-20.79,9.97-5.77,18.97-14.65,21.16-26.41h-40.25v-1.92h40.49v-.02Z"/><path d="M70.44,30.68v50.94c-.3,6.31-2.38,14.93-7.83,18.76-.72.51-3.02,1.72-3.79,1.72H24.92v-16.3h32.94c.88,0,2.52-2.92,2.52-3.71v-7.55h-27.19c-1.25,0-4.36-1.94-5.28-2.87-8.48-8.52-8.51-31.05.96-38.84.74-.61,3.21-2.15,4.08-2.15h37.5,0ZM60.38,58.24v-8.03c0-.98-1.38-3.14-2.53-3.22l-23.66.04c-2.38.53-2.02,5.84-1.86,7.75.08.98.85,3.47,2.05,3.47h26Z"/><polygon points="93.92 30.68 93.92 102.1 83.86 102.1 83.86 46.98 75.23 46.98 75.23 30.68 93.92 30.68"/><polygon points="117.64 30.68 117.64 102.1 107.58 102.1 107.58 46.98 98.95 46.98 98.95 30.68 117.64 30.68"/><polygon points="83.38 117.92 83.38 121.87 83.02 122.23 77.39 122.23 77.39 118.28 77.75 117.92 83.38 117.92"/></g><g><g><path d="M67.16,117.5l-4.91,15.01h-2.39l-4.91-15.01h2.44l3.67,11.18,3.66-11.18s2.44,0,2.44,0Z"/><path d="M69.74,117.5h2.17v15.01h-2.17s0-15.01,0-15.01Z"/><path d="M75.79,118.8c.53-.87,1.17-1.3,1.93-1.3h7.85v6.55c0,1.21-.27,2.24-.8,3.1-.53.86-1.18,1.29-1.93,1.29h-5.68v4.08h-2.17v-10.65c0-1.19.27-2.21.8-3.07ZM77.72,120.93c-.15,0-.28.1-.4.29-.11.17-.16.39-.16.65v3.14h5.68c.14,0,.28-.1.4-.29.11-.17.16-.4.16-.67v-3.12h-5.68Z"/></g><g><path d="M56.32,137h.7v4.85h-.7v-4.85Z"/><path d="M62.97,140.42c0,.4-.08.74-.25,1.01-.18.28-.38.42-.62.42h-2.36v-1.11h2.28c.06,0,.11-.03.15-.1.04-.06.06-.12.07-.18v-.52h-2.5v-1.52c0-.4.08-.74.25-1.01.18-.28.38-.42.62-.42h2.36v1.11h-2.36c-.06,0-.11.03-.15.1-.05.08-.07.15-.07.22v.48h2.58v1.52Z"/><path d="M65.93,137.41c.17-.28.38-.42.63-.42h2.53v1.93c0,.39-.08.72-.25.99-.09.14-.19.25-.3.32l.51,1.62h-.7l-.51-1.52h-1.47v1.52h-.7v-3.44c0-.38.09-.71.26-.99h0ZM66.56,138.1c-.05,0-.1.03-.13.09-.04.06-.06.13-.06.21v.81h1.84s.09-.03.12-.08c.03-.05.05-.12.05-.21v-.82h-1.83,0Z"/><path d="M74.36,140.61h-1.87v1.23h-.7v-3.41c0-.4.09-.74.26-1.01.18-.29.39-.43.63-.43h2.38v4.85h-.7v-1.23h0ZM74.36,139.51v-1.41h-1.68c-.06,0-.1.02-.13.07-.04.06-.05.12-.05.19v1.14h1.87-.01Z"/><path d="M80.88,138.1h-2.41v.76h2.41v1.11h-2.41v.5c0,.07.02.13.05.19.03.05.07.07.13.07h2.22v1.1h-2.22c-.24,0-.45-.14-.63-.43-.17-.27-.26-.61-.26-1.01v-3.41h3.11v1.11h.01Z"/><path d="M84.28,140.48c0,.07.02.13.05.19.03.05.07.07.13.07h2.22v1.1h-2.22c-.24,0-.45-.14-.63-.43-.17-.27-.26-.61-.26-1.01v-3.41h.7v3.48h.01Z"/></g></g></svg>
+    </div>
+    <div>
+      <div class="title">מחשבון עלות <span>יבוא רכבים</span></div>
+      <div class="sub">כל הזכויות שמורות לרון אוחיון</div>
+    </div>
+  </div>
+
+  <!-- ================= HOME ================= -->
+  <div id="homeView">
+    <div class="home-top">
+      <div class="ttl">הרכבים שלי <small id="homeCount"></small></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button class="btn-xs" id="importBtn" title="ייבא גיבוי">📥 ייבא</button>
+        <button class="btn-xs" id="exportBtn" title="ייצא גיבוי">📤 ייצא</button>
+        <button class="btn btn-primary" id="newBtn">+ רכב חדש</button>
+      </div>
+    </div>
+    <div class="deliv-bar">
+      <label class="sw sw-sm"><input type="checkbox" id="showDelivered" /><span class="track"></span><span class="knob"></span></label>
+      <span class="deliv-lab">הצג גם רכבים שנמסרו</span>
+    </div>
+    <div id="tagFilter" class="tag-filter"></div>
+    <div id="cards" class="cards"></div>
+  </div>
+
+  <!-- ================= VIEW (תצוגה) ================= -->
+  <div id="viewView" style="display:none">
+    <div class="back-bar">
+      <button class="back-btn" id="vBack">→ כל הרכבים</button>
+    </div>
+    <div id="viewBody"></div>
+  </div>
+
+  <!-- ================= CALC ================= -->
+  <div id="calcView" style="display:none">
+    <div class="back-bar">
+      <button class="back-btn" id="backBtn">→ כל הרכבים</button>
+    </div>
+    <div class="grid">
+      <!-- left -->
+      <div>
+        <div class="card">
+          <div class="card-h"><span class="dot"></span><h2>פרטי הרכב</h2></div>
+          <div class="two">
+            <label><div class="fld-l">סוג רכב</div><input class="inp" id="carName" placeholder="לדוגמה: סילברדו טרייל בוס" /></label>
+            <label><div class="fld-l">מס׳ שלדה</div><input class="inp" id="chassis" placeholder="VIN" /></label>
+          </div>
+          <div class="mt"><label><div class="fld-l">הערות</div><textarea class="inp" id="notes" placeholder="צבע, אבזור, מצב, פרטי דילר, כל מה שחשוב לזכור..."></textarea></label></div>
+          <div class="mt">
+            <div class="fld-l">תגיות</div>
+            <div class="tags-edit" id="tagsEdit"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><span class="dot"></span><h2>שערי המרה (כמה שקל לכל יחידה)</h2></div>
+          <div class="rates" id="rates"></div>
+          <button class="fetch-all" id="fetchAll"><span class="ico"></span> עדכן את כל השערים</button>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><span class="dot"></span><h2>שורות עלות</h2></div>
+          <div class="line hdr"><div>תיאור</div><div>סכום</div><div>מטבע</div><div style="text-align:left">בש״ח</div><div class="cif-h" title="כלול בבסיס המס (CIF)">מס</div><div></div></div>
+          <div id="lines"></div>
+          <button class="addline" id="addLine">+ הוסף שורת עלות</button>
+          <div class="note">כל שורה מומרת לשקל לפי המטבע והשער שלמעלה. סמן "מס" בשורות שנכללות בערך ה‑CIF (רכב, שילוח, עמלת דילר). שורות שאינן מסומנות נחשבות הוצאות לא חייבות במס (תקינה, לוחיות, אגרות).</div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><span class="dot"></span><h2>מסי יבוא</h2></div>
+          <div class="tax-grid">
+            <div class="tax-row">
+              <div class="tax-lab">מכס כללי <small>7% על ה‑CIF</small></div>
+              <label class="sw"><input type="checkbox" id="taxCustoms" /><span class="track"></span><span class="knob"></span></label>
+            </div>
+            <div class="tax-row">
+              <div class="tax-lab">מס קניה <small>על ה‑CIF + מכס</small></div>
+              <select class="tax-sel" id="taxPurchase">
+                <option value="0">ללא</option>
+                <option value="72">72%</option>
+                <option value="83">83%</option>
+              </select>
+            </div>
+            <div class="tax-row">
+              <div class="tax-lab">מע״מ <small>18% על הסכום הסופי</small></div>
+              <label class="sw"><input type="checkbox" id="taxVat" /><span class="track"></span><span class="knob"></span></label>
+            </div>
+          </div>
+          <div class="note">ללא מסים כלל — השאר הכל מכובה (ברירת מחדל). רכב פטור — הדלק מע״מ בלבד.</div>
+        </div>
+      </div>
+
+      <!-- right -->
+      <div>
+        <div class="card sum-card">
+          <div class="card-h"><span class="dot"></span><h2>סיכום</h2></div>
+          <div id="taxBreak"></div>
+          <div class="sum-total"><span class="k" id="totalLabel">סה״כ עלות</span><span class="v" id="totalCost">—</span></div>
+          <div id="totalAltRow"></div>
+          <label class="mt-sale"><div class="fld-l">מחיר מכירה (₪)</div><input class="inp num" type="number" id="salePrice" /></label>
+          <div class="vat-toggle">
+            <span class="lab">מחיר המכירה כולל מע״מ (<span id="vatLabel">18</span>%)</span>
+            <label class="sw"><input type="checkbox" id="vatOn" /><span class="track"></span><span class="knob"></span></label>
+          </div>
+          <div id="vatRows"></div>
+          <div class="profit" id="profitBox">
+            <div class="lbl" id="profitLbl">רווח</div>
+            <div class="big" id="profitVal">—</div>
+            <div class="pct" id="profitPct">—</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="saveBtn">שמור רכב</button>
+            <button class="btn btn-ghost" id="dupBtn" style="display:none">שכפל</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ===================== קבועים ===================== */
+const CURRENCIES = ["ILS","USD","CAD","EUR"];
+const SYM = {ILS:"₪", USD:"$", CAD:"C$", EUR:"€"};
+const FETCHABLE = ["USD","CAD","EUR"];
+const VAT_RATE = 18;
+const LS_KEY = "v911vip_vehicles";
+const TAGS_KEY = "v911vip_tags";
+const TAG_COLORS = ["#f59e0b","#34d399","#60a5fa","#f472b6","#a78bfa","#fb923c","#2dd4bf","#facc15","#f87171","#818cf8"];
+const REFRESH_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>';
+const EDIT_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
+const TAG_ICON_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>';
+
+function defaultLines(){
+  return [
+    {label:"מחיר רכב",      amount:0, currency:"USD", cif:true},
+    {label:"הובלה",         amount:0, currency:"USD", cif:true},
+    {label:"עמלת דילר",     amount:0, currency:"USD", cif:true},
+    {label:"הזמנה כספית",   amount:0, currency:"ILS", cif:false},
+    {label:"תקינה + לוחיות",amount:0, currency:"ILS", cif:false},
+  ];
+}
+function freshState(){
+  return {
+    carName:"", chassis:"", notes:"", tags:[],
+    rates:{ILS:1, USD:2.855, CAD:2.066, EUR:3.1},
+    lines:defaultLines(),
+    salePrice:0, vatOn:false,
+    taxCustoms:false,   // מכס כללי 7%
+    taxPurchase:0,      // מס קניה: 0 / 72 / 83
+    taxVat:false,       // מע"מ יבוא 18%
+    delivered:false,    // הרכב נמסר/הגיע
+  };
+}
+
+let state = freshState();
+let editingId = null;     // null = רכב חדש; אחרת מזהה רכב שמור
+let rateStamp = {};
+let fetching = {};
+let lineOuts = [];        // הפניות לשדות ה"בש״ח" בכל שורה לעדכון מהיר
+let homeFilter = null;    // סינון מסך הבית לפי תג (null = הכל)
+let showDelivered = false; // האם להציג רכבים שנמסרו במסך הבית
+let tagPickerOpen = false;
+let homeTagPickerFor = null;  // id הרכב שבורר התגים שלו פתוח במסך הבית
+let newTagColor = TAG_COLORS[0];  // צבע נבחר ליצירת תג חדש
+let editingColorFor = null;       // id תג שעורכים את צבעו
+
+/* ===================== עזרים ===================== */
+function fmt(n,d){ d=d||0; if(!isFinite(n)) return "—"; return n.toLocaleString("he-IL",{minimumFractionDigits:d,maximumFractionDigits:d}); }
+
+/* דגלים (SVG מוטמע, viewBox 24x16) */
+function flagSVG(c){
+  if(c==="USD"){
+    let stripes="";
+    for(let i=1;i<13;i+=2){ stripes+='<rect y="'+(i*16/13).toFixed(2)+'" width="24" height="'+(16/13).toFixed(2)+'" fill="#fff"/>'; }
+    let stars="";
+    for(let r=0;r<3;r++) for(let col=0;col<3;col++){ stars+='<circle cx="'+(2+col*3)+'" cy="'+(1.8+r*2.6).toFixed(2)+'" r="0.5" fill="#fff"/>'; }
+    return '<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#b22234"/>'+stripes+'<rect width="10" height="'+(7*16/13).toFixed(2)+'" fill="#3c3b6e"/>'+stars+'</svg>';
+  }
+  if(c==="CAD"){
+    const leaf="12,3.2 12.7,5.2 14,4.7 13.4,6.2 15.2,6 13.8,7.3 14.6,8 12.5,7.8 12.5,11.5 11.5,11.5 11.5,7.8 9.4,8 10.2,7.3 8.8,6 10.6,6.2 10,4.7 11.3,5.2";
+    return '<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#fff"/><rect width="6" height="16" fill="#d52b1e"/><rect x="18" width="6" height="16" fill="#d52b1e"/><polygon points="'+leaf+'" fill="#d52b1e"/></svg>';
+  }
+  if(c==="EUR"){
+    let stars="";
+    for(let i=0;i<12;i++){ const a=i*30*Math.PI/180; const x=(12+4.6*Math.sin(a)).toFixed(2); const y=(8-4.6*Math.cos(a)).toFixed(2); stars+='<circle cx="'+x+'" cy="'+y+'" r="0.7" fill="#ffcc00"/>'; }
+    return '<svg viewBox="0 0 24 16"><rect width="24" height="16" fill="#003399"/>'+stars+'</svg>';
+  }
+  return "";
+}
+function newId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function fmtDate(ts){ if(!ts) return ""; const d=new Date(ts); if(isNaN(d)) return ""; return d.toLocaleDateString("he-IL",{day:"2-digit",month:"2-digit",year:"2-digit"}); }
+function toILS(line){ const a=parseFloat(line.amount)||0; const r=state.rates[line.currency]; return a*(r==null?1:r); }
+function calc(){
+  // בסיס מס (CIF) מול עלויות מקומיות
+  let cif=0, local=0;
+  state.lines.forEach(l=>{ const v=toILS(l); if(l.cif) cif+=v; else local+=v; });
+
+  const customs  = state.taxCustoms ? cif*0.07 : 0;          // מכס כללי 7%
+  const base1    = cif + customs;
+  const purchase = state.taxPurchase>0 ? base1*(state.taxPurchase/100) : 0; // מס קניה
+  const base2    = base1 + purchase;
+  const importVat= state.taxVat ? base2*(VAT_RATE/100) : 0;   // מע"מ יבוא
+
+  const totalInclVat = base2 + importVat + local;   // עלות כוללת בפועל
+  const totalExVat   = base2 + local;               // עלות אחרי קיזוז מע"מ
+  const hasTax = state.taxCustoms || state.taxPurchase>0 || state.taxVat;
+  // העלות הקובעת לרווח: ללא מע"מ אם יש מע"מ יבוא לקיזוז, אחרת הסכום הרגיל
+  const costForProfit = state.taxVat ? totalExVat : totalInclVat;
+
+  const sale = parseFloat(state.salePrice)||0;
+  const saleNet = state.vatOn ? sale/(1+VAT_RATE/100) : sale;
+  const profit = saleNet - costForProfit;
+  const margin = costForProfit>0 ? profit/costForProfit*100 : 0;
+  const vatAmount = state.vatOn ? sale-saleNet : 0;
+
+  return {cif, local, customs, purchase, importVat, base1, base2,
+          totalInclVat, totalExVat, costForProfit, hasTax,
+          totalCost: totalInclVat, sale, saleNet, profit, margin, vatAmount};
+}
+function showToast(msg){
+  const t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2200);
+}
+
+/* ===================== אחסון ===================== */
+function loadSaved(){ try{ return JSON.parse(localStorage.getItem(LS_KEY))||[]; }catch(e){ return []; } }
+function persistSaved(a){ try{ localStorage.setItem(LS_KEY,JSON.stringify(a)); return true; }catch(e){ return false; } }
+
+/* ===================== מאגר תגים ===================== */
+function loadTags(){ try{ return JSON.parse(localStorage.getItem(TAGS_KEY))||[]; }catch(e){ return []; } }
+function persistTags(a){ try{ localStorage.setItem(TAGS_KEY,JSON.stringify(a)); return true; }catch(e){ return false; } }
+function tagById(id){ return loadTags().find(t=>t.id===id); }
+function createTag(name, color){
+  name=(name||"").trim(); if(!name) return null;
+  const tags=loadTags();
+  const exist=tags.find(t=>t.name.toLowerCase()===name.toLowerCase()); if(exist) return exist;
+  const t={id:newId(), name, color: color || TAG_COLORS[tags.length % TAG_COLORS.length]};
+  tags.push(t); persistTags(tags); return t;
+}
+function setTagColor(id, color){
+  const tags=loadTags(); const t=tags.find(x=>x.id===id); if(t){ t.color=color; persistTags(tags); }
+}
+function deleteTag(id){
+  persistTags(loadTags().filter(t=>t.id!==id));
+  const arr=loadSaved(); let changed=false;
+  arr.forEach(v=>{ if(v.tags && v.tags.includes(id)){ v.tags=v.tags.filter(x=>x!==id); changed=true; } });
+  if(changed) persistSaved(arr);
+  if(homeFilter===id) homeFilter=null;
+}
+
+/* ===================== מסך בית ===================== */
+/* ===================== תגיות (UI) ===================== */
+function tagPillEl(tag, opts){
+  opts=opts||{};
+  const el=document.createElement(opts.onClick?"button":"span");
+  el.className="tag-pill"+(opts.selected?" sel":"")+(opts.onClick?" click":"");
+  el.style.setProperty("--tc", tag.color||"#888");
+  const dot=document.createElement("span"); dot.className="tp-dot"; el.appendChild(dot);
+  el.appendChild(document.createTextNode(tag.name));
+  if(opts.removable){ const x=document.createElement("button"); x.className="tp-x"; x.textContent="×"; x.onclick=(e)=>{e.stopPropagation(); opts.onRemove&&opts.onRemove();}; el.appendChild(x); }
+  if(opts.onClick) el.onclick=opts.onClick;
+  return el;
+}
+function tagMiniEl(tag){
+  const el=document.createElement("span"); el.className="tag-mini";
+  el.style.color=tag.color||"#999";
+  el.innerHTML=TAG_ICON_SVG;
+  el.appendChild(document.createTextNode(tag.name));
+  return el;
+}
+function addTagToVehicle(vehId, tagId){
+  const arr=loadSaved(); const v=arr.find(x=>x.id===vehId); if(!v) return;
+  if(!v.tags) v.tags=[];
+  if(!v.tags.includes(tagId)) v.tags.push(tagId);
+  persistSaved(arr); renderHome();
+}
+function toggleVehicleTag(vehId, tagId){
+  const arr=loadSaved(); const v=arr.find(x=>x.id===vehId); if(!v) return;
+  if(!v.tags) v.tags=[];
+  if(v.tags.includes(tagId)) v.tags=v.tags.filter(x=>x!==tagId); else v.tags.push(tagId);
+  persistSaved(arr); renderHome();
+}
+function setVehicleDelivered(id, val){
+  const arr=loadSaved(); const v=arr.find(x=>x.id===id); if(!v) return;
+  v.delivered=val; persistSaved(arr);
+  state.delivered=val;
+  showView(id);
+}
+function colorSwatches(selected, onPick){
+  const wrap=document.createElement("div"); wrap.className="swatches";
+  TAG_COLORS.forEach(c=>{
+    const s=document.createElement("button"); s.className="swatch"+(c===selected?" sel":""); s.style.background=c; s.title="בחר צבע";
+    s.onclick=(e)=>{ e.stopPropagation(); onPick(c, s, wrap); };
+    wrap.appendChild(s);
+  });
+  return wrap;
+}
+/* בורר תגים מאוחד — משמש גם בעריכה וגם במסך הבית */
+function buildTagPicker(ctx){
+  const pop=document.createElement("div"); pop.className="tag-pop"; pop.onclick=e=>e.stopPropagation();
+  // יצירת תג חדש
+  const row=document.createElement("div"); row.className="tag-new";
+  const inp=document.createElement("input"); inp.className="cell"; inp.placeholder="צור תג חדש (לדוג׳ שם לקוח)...";
+  const commit=()=>{ const t=createTag(inp.value, newTagColor); if(t){ inp.value=""; if(!ctx.getSelected().includes(t.id)) ctx.toggle(t.id); else ctx.refresh(); } };
+  inp.onkeydown=(e)=>{ if(e.key==="Enter"){ e.preventDefault(); commit(); } };
+  const addBtn=document.createElement("button"); addBtn.className="tag-new-btn"; addBtn.textContent="הוסף"; addBtn.onclick=commit;
+  row.append(inp,addBtn); pop.appendChild(row);
+  // בורר צבע לתג החדש — מעדכן רק את הסימון, בלי לבנות מחדש (שומר על הטקסט שהוקלד)
+  const nc=colorSwatches(newTagColor, (c, btn, wrap)=>{ newTagColor=c; wrap.querySelectorAll(".swatch").forEach(s=>s.classList.remove("sel")); btn.classList.add("sel"); });
+  nc.classList.add("new-swatch"); pop.appendChild(nc);
+  // רשימת תגים קיימים
+  const all=loadTags();
+  if(all.length){
+    const list=document.createElement("div"); list.className="tag-list";
+    all.forEach(t=>{
+      const item=document.createElement("div"); item.className="tag-item";
+      const sel=ctx.getSelected().includes(t.id);
+      const pill=tagPillEl(t,{selected:sel, onClick:()=>ctx.toggle(t.id)});
+      const colorBtn=document.createElement("button"); colorBtn.className="tag-color-btn"+(editingColorFor===t.id?" active":""); colorBtn.style.background=t.color; colorBtn.title="שנה צבע";
+      colorBtn.onclick=(e)=>{ e.stopPropagation(); editingColorFor=(editingColorFor===t.id?null:t.id); ctx.refresh(); };
+      const del=document.createElement("button"); del.className="tag-del"; del.textContent="מחק"; del.title="מחק מהמאגר";
+      del.onclick=(e)=>{ e.stopPropagation(); if(confirm('למחוק את התג "'+t.name+'" מכל הרכבים?')){ deleteTag(t.id); editingColorFor=null; ctx.afterDelete?ctx.afterDelete(t.id):ctx.refresh(); } };
+      item.append(pill,colorBtn,del); list.appendChild(item);
+      if(editingColorFor===t.id){
+        const es=colorSwatches(t.color, (c)=>{ setTagColor(t.id,c); editingColorFor=null; ctx.refresh(); });
+        es.classList.add("edit-swatch"); list.appendChild(es);
+      }
+    });
+    pop.appendChild(list);
+  } else {
+    const empty=document.createElement("div"); empty.className="tag-empty"; empty.textContent="אין תגים עדיין — צור תג ראשון למעלה."; pop.appendChild(empty);
+  }
+  return pop;
+}
+function buildCardTagPicker(v){
+  const pop=buildTagPicker({
+    getSelected:()=> v.tags||[],
+    toggle:(id)=> toggleVehicleTag(v.id,id),
+    refresh:()=> renderHome(),
+    afterDelete:()=> renderHome()
+  });
+  pop.classList.add("card-pop");
+  return pop;
+}
+function renderTagsEdit(){
+  const wrap=document.getElementById("tagsEdit"); if(!wrap) return; wrap.innerHTML="";
+  (state.tags||[]).forEach(id=>{
+    const t=tagById(id); if(!t) return;
+    wrap.appendChild(tagPillEl(t,{removable:true, onRemove:()=>{ state.tags=state.tags.filter(x=>x!==id); renderTagsEdit(); }}));
+  });
+  const add=document.createElement("button"); add.className="tag-add"; add.textContent=tagPickerOpen?"סגור":"+ תג";
+  add.onclick=()=>{ tagPickerOpen=!tagPickerOpen; editingColorFor=null; renderTagsEdit(); };
+  wrap.appendChild(add);
+  if(tagPickerOpen){
+    const pop=buildTagPicker({
+      getSelected:()=> state.tags||[],
+      toggle:(id)=>{ if(!state.tags) state.tags=[]; if(state.tags.includes(id)) state.tags=state.tags.filter(x=>x!==id); else state.tags.push(id); renderTagsEdit(); },
+      refresh:()=> renderTagsEdit(),
+      afterDelete:(id)=>{ state.tags=(state.tags||[]).filter(x=>x!==id); renderTagsEdit(); }
+    });
+    wrap.appendChild(pop);
+    setTimeout(()=>{ if(editingColorFor===null){ const i=pop.querySelector("input"); if(i) i.focus(); } },0);
+  }
+}
+function renderTagFilter(){
+  const wrap=document.getElementById("tagFilter"); if(!wrap) return; wrap.innerHTML="";
+  const tags=loadTags();
+  if(tags.length===0){ wrap.style.display="none"; return; }
+  wrap.style.display="flex";
+  const all=document.createElement("button"); all.className="filter-chip"+(homeFilter===null?" active":""); all.textContent="הכל";
+  all.onclick=()=>{ homeFilter=null; renderHome(); };
+  wrap.appendChild(all);
+  tags.forEach(t=>{
+    const b=document.createElement("button"); b.className="filter-chip"+(homeFilter===t.id?" active":"");
+    b.style.setProperty("--tc",t.color);
+    const dot=document.createElement("span"); dot.className="tp-dot"; b.appendChild(dot);
+    b.appendChild(document.createTextNode(t.name));
+    b.onclick=()=>{ homeFilter=(homeFilter===t.id?null:t.id); renderHome(); };
+    wrap.appendChild(b);
+  });
+}
+
+function renderHome(){
+  renderTagFilter();
+  let arr = loadSaved().sort((a,b)=>(b.savedAt||0)-(a.savedAt||0));
+  const total = arr.length;
+  if(!showDelivered) arr = arr.filter(v=>!v.delivered);
+  if(homeFilter) arr = arr.filter(v=>v.tags && v.tags.includes(homeFilter));
+  document.getElementById("homeCount").textContent = total ? "· "+total : "";
+  const sd=document.getElementById("showDelivered"); if(sd) sd.checked=showDelivered;
+  const wrap = document.getElementById("cards");
+  wrap.innerHTML = "";
+  if(total===0){
+    const e=document.createElement("div");
+    e.className="home-empty";
+    e.innerHTML='<div class="big">עדיין לא שמרת רכבים</div>';
+    const b=document.createElement("button"); b.className="btn btn-primary"; b.textContent="+ בדוק את הרכב הראשון";
+    b.onclick=openNew; e.appendChild(b);
+    wrap.appendChild(e); return;
+  }
+  if(arr.length===0){
+    const e=document.createElement("div"); e.className="home-empty";
+    e.innerHTML='<div class="big">'+(homeFilter?"אין רכבים עם התג הזה":"אין רכבים להצגה")+'</div>';
+    wrap.appendChild(e); return;
+  }
+  arr.forEach(v=>{
+    const c=document.createElement("div"); c.className="vcard"+(v.delivered?" delivered":"");
+
+    const head=document.createElement("div"); head.className="vc-head";
+    const name=document.createElement("div"); name.className="vc-name"+(v.delivered?" deliv":""); name.textContent=v.carName||"רכב ללא שם"; head.appendChild(name);
+    if(v.delivered){ const dl=document.createElement("span"); dl.className="vc-deliv-badge"; dl.textContent="✓ נמסר"; head.appendChild(dl); }
+    c.appendChild(head);
+    if(v.chassis){ const ch=document.createElement("div"); ch.className="vc-chassis"; ch.textContent=v.chassis; c.appendChild(ch); }
+    if(v.notes){ const n=document.createElement("div"); n.className="vc-notes"; n.textContent=v.notes; c.appendChild(n); }
+
+    const sep=document.createElement("div"); sep.className="vc-sep"; c.appendChild(sep);
+
+    const s1=document.createElement("div"); s1.className="vc-stat";
+    s1.innerHTML='<span>עלות</span>'; const b1=document.createElement("b"); b1.style.color="#cfd3de"; b1.textContent=fmt(v.totalCost)+" ₪"; s1.appendChild(b1); c.appendChild(s1);
+
+    const ssale=document.createElement("div"); ssale.className="vc-stat";
+    ssale.innerHTML='<span>מחיר מכירה</span>'; const bs=document.createElement("b"); bs.style.color="#cfd3de"; bs.textContent=fmt(parseFloat(v.salePrice)||0)+" ₪"; ssale.appendChild(bs); c.appendChild(ssale);
+
+    const s2=document.createElement("div"); s2.className="vc-stat";
+    s2.innerHTML='<span>רווח</span>'; const b2=document.createElement("b"); b2.style.color=(v.profit>=0?"#34d399":"#f87171"); b2.textContent=(v.profit>=0?"+":"")+fmt(v.profit)+" ₪"; s2.appendChild(b2); c.appendChild(s2);
+
+    if(isFinite(v.margin)){ const p=document.createElement("div"); p.className="vc-pct"; p.textContent=fmt(v.margin,1)+"% רווח"; c.appendChild(p); }
+
+    const act=document.createElement("div"); act.className="vc-actions";
+    const open=document.createElement("button"); open.className="vc-btn"; open.textContent="פתח"; open.onclick=()=>openVehicle(v.id);
+    const dup =document.createElement("button"); dup.className="vc-btn"; dup.textContent="שכפל"; dup.onclick=()=>duplicateVehicle(v.id);
+    const del =document.createElement("button"); del.className="vc-btn danger"; del.textContent="מחק"; del.onclick=()=>{ if(confirm("למחוק את \""+(v.carName||"הרכב")+"\"?")) deleteVehicle(v.id); };
+    act.append(open,dup,del); c.appendChild(act);
+
+    const foot=document.createElement("div"); foot.className="vc-foot";
+    const ftags=document.createElement("div"); ftags.className="vc-foot-tags";
+    const hasTags = v.tags && v.tags.length;
+    if(hasTags){ v.tags.forEach(id=>{ const t=tagById(id); if(t) ftags.appendChild(tagMiniEl(t)); }); }
+    const isOpen = homeTagPickerFor===v.id;
+    const addTagBtn=document.createElement("button");
+    addTagBtn.className = (hasTags||isOpen) ? "vc-tag-add mini" : "vc-tag-add";
+    addTagBtn.textContent = isOpen ? "✕ סגור" : (hasTags ? "+" : "+ הוסף תג");
+    if(isOpen) addTagBtn.className = "vc-tag-add close";
+    addTagBtn.title = isOpen ? "סגור" : "הוסף תג";
+    addTagBtn.onclick=(e)=>{ e.stopPropagation(); editingColorFor=null; homeTagPickerFor = (homeTagPickerFor===v.id?null:v.id); renderHome(); };
+    ftags.appendChild(addTagBtn);
+    foot.appendChild(ftags);
+    const dd=document.createElement("div"); dd.className="vc-date"; dd.textContent = v.savedAt ? ("עודכן "+fmtDate(v.savedAt)) : "";
+    foot.appendChild(dd);
+    c.appendChild(foot);
+
+    if(homeTagPickerFor===v.id){ c.appendChild(buildCardTagPicker(v)); }
+
+    wrap.appendChild(c);
+  });
+}
+
+/* ===================== ניווט ===================== */
+function hideAll(){ document.getElementById("homeView").style.display="none"; document.getElementById("viewView").style.display="none"; document.getElementById("calcView").style.display="none"; }
+function showHome(){ hideAll(); document.getElementById("homeView").style.display="block"; renderHome(); window.scrollTo({top:0}); }
+function showCalc(){ hideAll(); document.getElementById("calcView").style.display="block"; window.scrollTo({top:0}); }
+function showView(id){ hideAll(); document.getElementById("viewView").style.display="block"; renderView(id); window.scrollTo({top:0}); }
+
+function loadFormFromState(){
+  document.getElementById("dupBtn").style.display = editingId ? "block" : "none";
+  tagPickerOpen=false; homeTagPickerFor=null; editingColorFor=null;
+  syncInputs(); renderRates(); renderLines(); renderTagsEdit(); update();
+}
+function openNew(){
+  editingId=null; rateStamp={};
+  const prev=state.rates;            // שמור שערים אחרונים שהוזנו/נמשכו
+  state=freshState(); state.rates=Object.assign({ILS:1},prev);
+  loadFormFromState(); showCalc();
+}
+function openVehicle(id){           // פתיחה במצב תצוגה
+  const v=loadSaved().find(x=>x.id===id); if(!v) return;
+  editingId=id; rateStamp={};
+  state={
+    carName:v.carName||"", chassis:v.chassis||"", notes:v.notes||"", tags:(v.tags||[]).slice(),
+    rates:Object.assign({ILS:1},v.rates||{}),
+    lines:(v.lines||[]).map(l=>Object.assign({cif: l.cif!=null ? l.cif : (l.currency&&l.currency!=="ILS")}, l)),
+    salePrice:v.salePrice||0, vatOn:!!v.vatOn,
+    taxCustoms:!!v.taxCustoms, taxPurchase:v.taxPurchase||0, taxVat:!!v.taxVat,
+    delivered:!!v.delivered,
+  };
+  showView(id);
+}
+function editCurrent(){             // מעבר מתצוגה לעריכה
+  loadFormFromState(); showCalc();
+}
+function backFromEdit(){            // יציאה מעריכה בלי לשמור
+  if(editingId){ openVehicle(editingId); } else { showHome(); }
+}
+
+/* ===================== מסך תצוגה ===================== */
+function renderView(id){
+  const v=loadSaved().find(x=>x.id===id) || {};
+  const t=calc();
+  const body=document.getElementById("viewBody");
+  body.innerHTML="";
+
+  const card=document.createElement("div"); card.className="card view-card";
+
+  // header
+  const vh=document.createElement("div"); vh.className="vh";
+  const right=document.createElement("div");
+  const nm=document.createElement("div"); nm.className="vv-name"; nm.textContent=state.carName||"רכב ללא שם"; right.appendChild(nm);
+  if(state.chassis){ const ch=document.createElement("div"); ch.className="vv-chassis"; ch.textContent=state.chassis; right.appendChild(ch); }
+  if(state.tags && state.tags.length){ const tr=document.createElement("div"); tr.className="vv-tags"; state.tags.forEach(id=>{ const t=tagById(id); if(t) tr.appendChild(tagPillEl(t,{})); }); if(tr.children.length) right.appendChild(tr); }
+  const dt=document.createElement("div"); dt.className="vh-date"; dt.textContent = v.savedAt ? ("עודכן "+fmtDate(v.savedAt)) : "";
+  vh.append(right, dt); card.appendChild(vh);
+
+  if(state.notes){ const nt=document.createElement("div"); nt.className="vv-notes"; nt.textContent=state.notes; card.appendChild(nt); }
+
+  const sep=document.createElement("div"); sep.className="vv-sep"; card.appendChild(sep);
+
+  // cost lines
+  const lines=document.createElement("div"); lines.className="vv-lines";
+  state.lines.forEach(l=>{
+    const amt=parseFloat(l.amount)||0;
+    if(amt===0 && !l.label) return;
+    const row=document.createElement("div"); row.className="vv-line";
+    const lab=document.createElement("span"); lab.className="vl-lab"; lab.textContent=l.label||"—";
+    const orig=document.createElement("span"); orig.className="vl-orig";
+    orig.textContent = l.currency==="ILS" ? "" : (SYM[l.currency]+" "+fmt(amt, amt%1?2:0));
+    const ils=document.createElement("span"); ils.className="vl-ils"; ils.textContent=fmt(toILS(l))+" ₪";
+    row.append(lab, orig, ils); lines.appendChild(row);
+  });
+  card.appendChild(lines);
+
+  // tax breakdown
+  if(t.hasTax){
+    const tx=document.createElement("div"); tx.className="vv-tax";
+    let rows='<div class="vv-row sub"><span>ערך CIF</span><b>'+fmt(t.cif)+' ₪</b></div>';
+    if(state.taxCustoms) rows+='<div class="vv-row sub"><span>מכס כללי 7%</span><b>'+fmt(t.customs)+' ₪</b></div>';
+    if(state.taxPurchase>0) rows+='<div class="vv-row sub"><span>מס קניה '+state.taxPurchase+'%</span><b>'+fmt(t.purchase)+' ₪</b></div>';
+    if(state.taxVat) rows+='<div class="vv-row sub"><span>מע״מ 18%</span><b>'+fmt(t.importVat)+' ₪</b></div>';
+    if(t.local>0) rows+='<div class="vv-row sub"><span>הוצאות לא חייבות במס</span><b>'+fmt(t.local)+' ₪</b></div>';
+    tx.innerHTML=rows; card.appendChild(tx);
+  }
+
+  // total (tax-aware)
+  const exVat = state.taxVat;
+  const tot=document.createElement("div"); tot.className="vv-total";
+  tot.innerHTML='<span>'+(exVat?"סה״כ עלות (ללא מע״מ)":"סה״כ עלות")+'</span>';
+  const tb=document.createElement("b"); tb.textContent=fmt(exVat? t.totalExVat : t.totalInclVat)+" ₪"; tot.appendChild(tb);
+  card.appendChild(tot);
+  if(exVat){
+    const inc=document.createElement("div"); inc.className="vv-row sub"; inc.innerHTML='<span>כולל מע״מ (בתזרים)</span><b>'+fmt(t.totalInclVat)+' ₪</b>'; card.appendChild(inc);
+  }
+
+  // sale + vat
+  const saleRow=document.createElement("div"); saleRow.className="vv-row";
+  saleRow.innerHTML='<span>מחיר מכירה</span>'; const sb=document.createElement("b"); sb.textContent=fmt(t.sale)+" ₪"; saleRow.appendChild(sb);
+  card.appendChild(saleRow);
+  if(state.vatOn){
+    const r1=document.createElement("div"); r1.className="vv-row sub"; r1.innerHTML='<span>מתוכו מע״מ</span><b>'+fmt(t.vatAmount)+' ₪</b>'; card.appendChild(r1);
+    const r2=document.createElement("div"); r2.className="vv-row sub"; r2.innerHTML='<span>מכירה ללא מע״מ</span><b>'+fmt(t.saleNet)+' ₪</b>'; card.appendChild(r2);
+  }
+
+  // profit
+  const pos=t.profit>=0;
+  const exNote=(state.vatOn||state.taxVat)?" (ללא מע״מ)":"";
+  const pf=document.createElement("div"); pf.className="profit "+(pos?"pos":"neg");
+  pf.innerHTML='<div class="lbl">'+(pos?"רווח":"הפסד")+exNote+'</div>'+
+               '<div class="big">'+fmt(t.profit)+' ₪</div>'+
+               '<div class="pct">'+fmt(t.margin,1)+'% רווח</div>';
+  card.appendChild(pf);
+
+  // actions
+  const delivRow=document.createElement("button");
+  delivRow.className="vv-deliv-btn"+(state.delivered?" on":"");
+  delivRow.textContent = state.delivered ? "✓ נמסר — בטל סימון" : "סמן כנמסר";
+  delivRow.onclick=()=> setVehicleDelivered(id, !state.delivered);
+  card.appendChild(delivRow);
+
+  const act=document.createElement("div"); act.className="vv-actions";
+  const edit=document.createElement("button"); edit.className="btn btn-primary vv-edit"; edit.innerHTML='<span class="ed-ico">'+EDIT_SVG+'</span> ערוך'; edit.onclick=editCurrent;
+  const dup=document.createElement("button"); dup.className="btn btn-ghost"; dup.textContent="שכפל"; dup.onclick=()=>{ duplicateVehicle(id); };
+  act.append(edit, dup); card.appendChild(act);
+
+  body.appendChild(card);
+}
+
+/* ===================== פעולות רכב ===================== */
+function saveVehicle(){
+  const t=calc();
+  const arr=loadSaved();
+  const rec={
+    id: editingId||newId(),
+    carName:state.carName, chassis:state.chassis, notes:state.notes, tags:(state.tags||[]).slice(),
+    rates:Object.assign({},state.rates),
+    lines:state.lines.map(l=>Object.assign({},l)),
+    salePrice:state.salePrice, vatOn:state.vatOn,
+    taxCustoms:state.taxCustoms, taxPurchase:state.taxPurchase, taxVat:state.taxVat,
+    delivered:state.delivered,
+    totalCost:t.totalCost, profit:t.profit, margin:t.margin,
+    savedAt:Date.now(),
+  };
+  const idx = editingId ? arr.findIndex(v=>v.id===editingId) : -1;
+  if(idx>=0) arr[idx]=rec; else arr.push(rec);
+  if(!persistSaved(arr)){ alert("השמירה לא נתמכת בסביבה הזו. הורד את הקובץ והרץ אותו בדפדפן כדי שהשמירה תעבוד."); return; }
+  editingId=rec.id;
+  showToast(idx>=0 ? "הרכב עודכן" : "הרכב נשמר");
+  showView(rec.id);
+}
+function duplicateVehicle(id){
+  const arr=loadSaved(); const o=arr.find(v=>v.id===id); if(!o) return;
+  const copy=JSON.parse(JSON.stringify(o));
+  copy.id=newId(); copy.carName=(o.carName||"רכב")+" (עותק)";
+  copy.chassis=""; copy.notes="";
+  copy.savedAt=Date.now();
+  arr.push(copy); persistSaved(arr);
+  showToast("נוצר עותק"); renderHome();
+}
+function deleteVehicle(id){ persistSaved(loadSaved().filter(v=>v.id!==id)); renderHome(); }
+
+/* ===================== רינדור מחשבון ===================== */
+function renderRates(){
+  const wrap=document.getElementById("rates"); wrap.innerHTML="";
+  FETCHABLE.forEach(c=>{
+    const box=document.createElement("div"); box.className="rate";
+    const head=document.createElement("div"); head.className="c";
+    const lw=document.createElement("span"); lw.className="lblwrap";
+    const flag=document.createElement("span"); flag.className="flag"; flag.innerHTML=flagSVG(c);
+    const lbl=document.createElement("span"); lbl.textContent=SYM[c]+" "+c+" → ₪";
+    lw.append(flag,lbl);
+    const btn=document.createElement("button"); btn.className="fetch-btn"+(fetching[c]?" spin":""); btn.title="עדכן שער"; btn.innerHTML=REFRESH_SVG; btn.disabled=!!fetching[c]; btn.onclick=()=>fetchRates([c]);
+    head.append(lw,btn);
+    const inp=document.createElement("input"); inp.type="number"; inp.step="0.0001"; inp.value=state.rates[c];
+    inp.oninput=e=>{ state.rates[c]=parseFloat(e.target.value)||0; update(); };
+    const stamp=document.createElement("div"); const st=rateStamp[c];
+    stamp.className="stamp "+(st?st.cls:""); stamp.textContent=st?st.text:"";
+    box.append(head,inp,stamp); wrap.appendChild(box);
+  });
+}
+function renderLines(){
+  const wrap=document.getElementById("lines"); wrap.innerHTML="";
+  lineOuts=[];
+  state.lines.forEach(line=>{
+    const row=document.createElement("div"); row.className="line";
+    const lbl=document.createElement("input"); lbl.className="cell"; lbl.value=line.label;
+    lbl.oninput=e=>{ line.label=e.target.value; };
+    const amt=document.createElement("input"); amt.className="cell num"; amt.type="number"; amt.value=line.amount;
+    amt.oninput=e=>{ line.amount=e.target.value; update(); };
+    const cur=document.createElement("select"); cur.className="cell cur";
+    CURRENCIES.forEach(c=>{ const o=document.createElement("option"); o.value=c; o.textContent=SYM[c]+" "+c; if(c===line.currency)o.selected=true; cur.appendChild(o); });
+    cur.onchange=e=>{ line.currency=e.target.value; update(); };
+    const out=document.createElement("div"); out.className="ils-out"; out.textContent=fmt(toILS(line))+" ₪";
+    const cif=document.createElement("input"); cif.type="checkbox"; cif.className="cif-box"; cif.checked=!!line.cif; cif.title="כלול בבסיס המס (CIF)";
+    cif.onchange=e=>{ line.cif=e.target.checked; update(); };
+    const del=document.createElement("button"); del.className="del"; del.textContent="×"; del.title="מחק שורה";
+    del.onclick=()=>{ state.lines=state.lines.filter(l=>l!==line); renderLines(); update(); };
+    row.append(lbl,amt,cur,out,cif,del); wrap.appendChild(row);
+    lineOuts.push({line, out});
+  });
+}
+function refreshLineOutputs(){
+  lineOuts.forEach(o=>{ o.out.textContent=fmt(toILS(o.line))+" ₪"; });
+}
+function update(){
+  refreshLineOutputs();
+  const t=calc();
+
+  // פירוט מסים
+  const tb=document.getElementById("taxBreak"); tb.innerHTML="";
+  if(t.hasTax){
+    let rows='<div class="sum-row"><span class="k">ערך CIF</span><span class="v">'+fmt(t.cif)+' ₪</span></div>';
+    if(state.taxCustoms) rows+='<div class="sum-row"><span class="k">מכס כללי 7%</span><span class="v">'+fmt(t.customs)+' ₪</span></div>';
+    if(state.taxPurchase>0) rows+='<div class="sum-row"><span class="k">מס קניה '+state.taxPurchase+'%</span><span class="v">'+fmt(t.purchase)+' ₪</span></div>';
+    if(state.taxVat) rows+='<div class="sum-row"><span class="k">מע״מ 18%</span><span class="v">'+fmt(t.importVat)+' ₪</span></div>';
+    if(t.local>0) rows+='<div class="sum-row"><span class="k">הוצאות לא חייבות במס</span><span class="v">'+fmt(t.local)+' ₪</span></div>';
+    tb.innerHTML=rows;
+  }
+
+  // סכום ראשי + חלופי
+  const primaryExVat = state.taxVat;  // אם יש מע"מ יבוא — מציגים "ללא מע"מ" כראשי
+  document.getElementById("totalLabel").textContent = primaryExVat ? "סה״כ עלות (ללא מע״מ)" : "סה״כ עלות";
+  document.getElementById("totalCost").textContent = fmt(primaryExVat ? t.totalExVat : t.totalInclVat)+" ₪";
+  const alt=document.getElementById("totalAltRow");
+  alt.innerHTML = primaryExVat
+    ? '<div class="sum-row"><span class="k">כולל מע״מ (בתזרים)</span><span class="v">'+fmt(t.totalInclVat)+' ₪</span></div>'
+    : "";
+
+  // מע"מ במכירה
+  const vr=document.getElementById("vatRows"); vr.innerHTML="";
+  if(state.vatOn){
+    vr.innerHTML='<div class="sum-row"><span class="k">מתוכו מע״מ</span><span class="v">'+fmt(t.vatAmount)+' ₪</span></div>'+
+                 '<div class="sum-row"><span class="k">מכירה ללא מע״מ</span><span class="v">'+fmt(t.saleNet)+' ₪</span></div>';
+  }
+
+  const box=document.getElementById("profitBox"); const pos=t.profit>=0;
+  box.className="profit "+(pos?"pos":"neg");
+  const exNote = (state.vatOn||state.taxVat) ? " (ללא מע״מ)" : "";
+  document.getElementById("profitLbl").textContent=(pos?"רווח":"הפסד")+exNote;
+  document.getElementById("profitVal").textContent=fmt(t.profit)+" ₪";
+  document.getElementById("profitPct").textContent=fmt(t.margin,1)+"% רווח";
+}
+function syncInputs(){
+  document.getElementById("carName").value=state.carName;
+  document.getElementById("chassis").value=state.chassis;
+  document.getElementById("notes").value=state.notes;
+  document.getElementById("salePrice").value=state.salePrice;
+  document.getElementById("vatOn").checked=state.vatOn;
+  document.getElementById("vatLabel").textContent=VAT_RATE;
+  document.getElementById("taxCustoms").checked=!!state.taxCustoms;
+  document.getElementById("taxPurchase").value=String(state.taxPurchase||0);
+  document.getElementById("taxVat").checked=!!state.taxVat;
+}
+
+/* ===================== משיכת שערים (שרשרת מקורות) ===================== */
+function applyRates(targets, ilsPerUsd, perUsd, label, cls){
+  targets.forEach(c=>{
+    let v=null;
+    if(c==="USD") v=ilsPerUsd;
+    else if(perUsd[c]) v=ilsPerUsd/perUsd[c];
+    if(v && isFinite(v)){ state.rates[c]=Number(v.toFixed(4)); rateStamp[c]={ok:true,cls:cls,text:label}; }
+    else rateStamp[c]={ok:false,cls:"err",text:"לא נמצא"};
+  });
+}
+async function tryBOI(){
+  const url="https://boi.org.il/PublicApi/GetExchangeRates";
+  const r=await fetch(url,{headers:{Accept:"application/json"}});
+  if(!r.ok) throw 0;
+  const d=await r.json();
+  const by={}; (d.exchangeRates||[]).forEach(x=>by[x.key]=x);
+  if(!by.USD) throw 0;
+  let date=""; if(by.USD.lastUpdate){ const dt=new Date(by.USD.lastUpdate); if(!isNaN(dt))date=dt.toLocaleDateString("he-IL"); }
+  const rate=k=> by[k] ? by[k].currentExchangeRate/(by[k].unit||1) : null;
+  return {ilsPerUsd:rate("USD"), perUsd:{CAD:rate("USD")/rate("CAD"), EUR:rate("USD")/rate("EUR")}, label:"בנק ישראל · "+date, cls:"ok"};
+}
+async function tryJsdelivr(){
+  const urls=[
+    "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json",
+    "https://latest.currency-api.pages.dev/v1/currencies/usd.json"
+  ];
+  for(const u of urls){
+    try{ const r=await fetch(u); if(!r.ok) continue; const d=await r.json(); const usd=d.usd; if(usd&&usd.ils){
+      return {ilsPerUsd:usd.ils, perUsd:{CAD:usd.cad, EUR:usd.eur}, label:"שער שוק · "+(d.date||""), cls:"mkt"};
+    }}catch(e){}
+  }
+  throw 0;
+}
+async function tryErApi(){
+  const r=await fetch("https://open.er-api.com/v6/latest/USD"); if(!r.ok) throw 0;
+  const d=await r.json(); const rt=d.rates; if(!rt||!rt.ILS) throw 0;
+  let date=""; if(d.time_last_update_utc){ const dt=new Date(d.time_last_update_utc); if(!isNaN(dt))date=dt.toLocaleDateString("he-IL"); }
+  return {ilsPerUsd:rt.ILS, perUsd:{CAD:rt.CAD, EUR:rt.EUR}, label:"שער שוק · "+date, cls:"mkt"};
+}
+async function fetchRates(targets){
+  targets = targets || FETCHABLE.slice();
+  targets.forEach(c=>fetching[c]=true);
+  document.getElementById("fetchAll").classList.add("spin"); renderRates();
+
+  let res=null;
+  for(const src of [tryBOI, tryJsdelivr, tryErApi]){
+    try{ res=await src(); if(res && isFinite(res.ilsPerUsd)) break; }catch(e){ res=null; }
+  }
+  if(res){ applyRates(targets, res.ilsPerUsd, res.perUsd, res.label, res.cls); }
+  else { targets.forEach(c=> rateStamp[c]={ok:false,cls:"err",text:"המשיכה נחסמה — הזן ידנית"}); }
+
+  targets.forEach(c=>fetching[c]=false);
+  document.getElementById("fetchAll").classList.remove("spin");
+  renderRates(); update();
+}
+
+/* ===================== חיבור ===================== */
+/* ===================== ייצוא / ייבוא ===================== */
+function exportData(){
+  const data={vehicles:loadSaved(), tags:loadTags(), exported:new Date().toISOString(), version:1};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='911vip_backup_'+new Date().toLocaleDateString('he-IL').replace(/\//g,'.')+'.json';
+  a.click(); showToast('הגיבוי הורד');
+}
+function importData(){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='.json';
+  inp.onchange=e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const d=JSON.parse(ev.target.result);
+        if(!Array.isArray(d.vehicles)) throw new Error('פורמט לא תקין');
+        if(!confirm('ייבוא יחליף את כל הנתונים הקיימים. להמשיך?')) return;
+        persistSaved(d.vehicles);
+        if(Array.isArray(d.tags)) persistTags(d.tags);
+        renderHome();
+        showToast('נטענו '+d.vehicles.length+' רכבים בהצלחה');
+      }catch(err){ alert('הקובץ אינו תקין: '+err.message); }
+    };
+    reader.readAsText(file);
+  };
+  inp.click();
+}
+
+/* ===================== PIN AUTH ===================== */
+const AUTH_KEY  = 'v911vip_auth';
+const AUTH_TTL  = 24 * 60 * 60 * 1000; // 24 שעות
+const PIN_HASH  = '1dd3288955c469ab7ffd582d0217813a8ae16f4e3d05a5bd98db4b91014dd8b0';
+let pinEntry = '';
+
+function checkAuth(){
+  try{ const t=localStorage.getItem(AUTH_KEY); return t && Date.now()-parseInt(t)<AUTH_TTL; }
+  catch(e){ return false; }
+}
+async function sha256(str){
+  const buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function updateDots(){
+  document.querySelectorAll('#pinDots span').forEach((s,i)=>{ s.className=i<pinEntry.length?'filled':''; });
+}
+async function pinInput(d){
+  if(pinEntry.length>=6) return;
+  pinEntry+=d; updateDots();
+  if(pinEntry.length===6){
+    const h=await sha256(pinEntry);
+    if(h===PIN_HASH){
+      try{ localStorage.setItem(AUTH_KEY,Date.now().toString()); }catch(e){}
+      document.getElementById('pinScreen').style.display='none';
+      init();
+    } else {
+      const dots=document.getElementById('pinDots');
+      dots.querySelectorAll('span').forEach(s=>s.className='error');
+      dots.classList.add('shake');
+      document.getElementById('pinError').textContent='קוד שגוי, נסה שוב';
+      setTimeout(()=>{ dots.classList.remove('shake'); pinEntry=''; updateDots(); document.getElementById('pinError').textContent=''; },500);
+    }
+  }
+}
+function pinBack(){ if(pinEntry.length){ pinEntry=pinEntry.slice(0,-1); updateDots(); } }
+function buildPin(){
+  // העתק לוגו מה-badge שבכותרת
+  const badgeSvg=document.querySelector('.badge svg');
+  if(badgeSvg){ const pl=document.getElementById('pinLogo'); if(pl) pl.innerHTML=badgeSvg.outerHTML; }
+  // הגדרת input
+  const inp=document.getElementById('pinInput');
+  const dotsEl=document.getElementById('pinDots');
+  dotsEl.addEventListener('click',()=>inp.focus());
+  inp.addEventListener('input',async ()=>{
+    const val=inp.value.replace(/\D/g,'').slice(0,6);
+    inp.value=val; pinEntry=val; updateDots();
+    if(val.length===6){
+      const h=await sha256(val);
+      if(h===PIN_HASH){
+        try{ localStorage.setItem(AUTH_KEY,Date.now().toString()); }catch(e){}
+        document.getElementById('pinScreen').style.display='none';
+        init();
+      } else {
+        dotsEl.querySelectorAll('span').forEach(s=>s.className='error');
+        dotsEl.classList.add('shake');
+        document.getElementById('pinError').textContent='קוד שגוי, נסה שוב';
+        setTimeout(()=>{ dotsEl.classList.remove('shake'); inp.value=''; pinEntry=''; updateDots(); document.getElementById('pinError').textContent=''; },500);
+      }
+    }
+  });
+  // פוקוס ראשוני (עם השהייה קלה לאחר render)
+  setTimeout(()=>inp.focus(),300);
+}
+buildPin();
+if(checkAuth()){ document.getElementById('pinScreen').style.display='none'; init(); }
+
+function init(){
+  document.getElementById("fetchAll").querySelector(".ico").innerHTML=REFRESH_SVG;
+  document.getElementById("carName").oninput   = e=> state.carName=e.target.value;
+  document.getElementById("chassis").oninput   = e=> state.chassis=e.target.value;
+  document.getElementById("notes").oninput     = e=> state.notes=e.target.value;
+  document.getElementById("salePrice").oninput = e=>{ state.salePrice=e.target.value; update(); };
+  document.getElementById("vatOn").onchange    = e=>{ state.vatOn=e.target.checked; update(); };
+  document.getElementById("taxCustoms").onchange= e=>{ state.taxCustoms=e.target.checked; update(); };
+  document.getElementById("taxPurchase").onchange=e=>{ state.taxPurchase=parseInt(e.target.value)||0; update(); };
+  document.getElementById("taxVat").onchange    = e=>{ state.taxVat=e.target.checked; update(); };
+  document.getElementById("addLine").onclick   = ()=>{ state.lines.push({label:"עלות נוספת",amount:0,currency:"ILS",cif:false}); renderLines(); update(); };
+  document.getElementById("fetchAll").onclick  = ()=> fetchRates();
+  document.getElementById("saveBtn").onclick   = saveVehicle;
+  document.getElementById("dupBtn").onclick    = ()=>{ if(editingId) duplicateVehicle(editingId); };
+  document.getElementById("newBtn").onclick    = openNew;
+  document.getElementById("exportBtn").onclick = exportData;
+  document.getElementById("importBtn").onclick = importData;
+  document.getElementById("showDelivered").onchange = e=>{ showDelivered=e.target.checked; renderHome(); };
+  document.getElementById("backBtn").onclick   = backFromEdit;
+  document.getElementById("vBack").onclick     = showHome;
+  document.getElementById("homeLink").onclick  = showHome;
+  showHome();
+}
+// init() נקרא אחרי אימות PIN
+</script>
+</body>
+</html>
