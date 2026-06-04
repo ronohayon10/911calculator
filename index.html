@@ -1321,6 +1321,26 @@ function importData(){
 
 /* ===================== PIN דרך Supabase Settings ===================== */
 let pinBusy = false;
+const AUTH_UNTIL_KEY = '911vip_auth_until';
+const AUTH_REMEMBER_MS = 30 * 24 * 60 * 60 * 1000;
+let appStarted = false;
+
+function isTrustedDevice(){
+  const until = Number(localStorage.getItem(AUTH_UNTIL_KEY) || 0);
+  return until && until > Date.now();
+}
+
+function rememberTrustedDevice(){
+  localStorage.setItem(AUTH_UNTIL_KEY, String(Date.now() + AUTH_REMEMBER_MS));
+}
+
+async function startAppAfterPin(){
+  if(appStarted) return;
+  appStarted = true;
+  const screen = document.getElementById('pinScreen');
+  if(screen) screen.style.display = 'none';
+  await init();
+}
 
 async function checkPinFromSupabase(pin){
   const client = initSupabaseClient();
@@ -1338,6 +1358,12 @@ async function checkPinFromSupabase(pin){
 
 function setupPinScreen(){
   const screen = document.getElementById('pinScreen');
+
+  if(isTrustedDevice()){
+    startAppAfterPin();
+    return;
+  }
+
   const input = document.getElementById('pinInput');
   const dotsWrap = document.getElementById('pinDots');
   const dots = Array.from(dotsWrap.querySelectorAll('span'));
@@ -1379,8 +1405,8 @@ function setupPinScreen(){
     try{
       const ok = await checkPinFromSupabase(pin);
       if(ok){
-        screen.style.display = 'none';
-        await init();
+        rememberTrustedDevice();
+        await startAppAfterPin();
       }else{
         showError('קוד שגוי');
       }
