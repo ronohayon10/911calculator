@@ -466,6 +466,8 @@ textarea.inp{resize:vertical;min-height:62px;line-height:1.5}
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
 /* ===================== קבועים ===================== */
 const CURRENCIES = ["ILS","USD","CAD","EUR"];
@@ -645,13 +647,104 @@ function showToast(msg){
   clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),2200);
 }
 
-/* ===================== אחסון ===================== */
-function loadSaved(){ try{ return JSON.parse(localStorage.getItem(LS_KEY))||[]; }catch(e){ return []; } }
-function persistSaved(a){ try{ localStorage.setItem(LS_KEY,JSON.stringify(a)); return true; }catch(e){ return false; } }
+/* ===================== אחסון - Supabase + גיבוי מקומי ===================== */
+const SUPABASE_URL = "https://lbqztwuhmvvpycxvgmqb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Sk_jqUY3DmJBxXtYYHyo8w_w68lmGUf";
 
-/* ===================== מאגר תגים ===================== */
-function loadTags(){ try{ return JSON.parse(localStorage.getItem(TAGS_KEY))||[]; }catch(e){ return []; } }
-function persistTags(a){ try{ localStorage.setItem(TAGS_KEY,JSON.stringify(a)); return true; }catch(e){ return false; } }
+let sb = null;
+let savedCache = [];
+let tagsCache = [];
+
+function safeLocalRead(key){
+  try{ return JSON.parse(localStorage.getItem(key)) || []; }catch(e){ return []; }
+}
+function safeLocalWrite(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); return true; }catch(e){ return false; }
+}
+async function initSupabaseStorage(){
+  savedCache = safeLocalRead(LS_KEY);
+  tagsCache = safeLocalRead(TAGS_KEY);
+
+  if(!window.supabase){
+    showToast("Supabase לא נטען - עובד מגיבוי מקומי");
+    return;
+  }
+
+  sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  try{
+    const [vehRes, tagRes] = await Promise.all([
+      sb.from("vehicles").select("id,data,saved_at").order("saved_at", { ascending:false }),
+      sb.from("tags").select("id,data")
+    ]);
+
+    if(!vehRes.error && Array.isArray(vehRes.data)){
+      savedCache = vehRes.data.map(r => Object.assign({id:r.id}, r.data || {}, {savedAt:(r.data && r.data.savedAt) || r.saved_at || Date.now()}));
+      safeLocalWrite(LS_KEY, savedCache);
+    } else if(vehRes.error){
+      console.error("Supabase vehicles load error", vehRes.error);
+    }
+
+    if(!tagRes.error && Array.isArray(tagRes.data)){
+      tagsCache = tagRes.data.map(r => Object.assign({id:r.id}, r.data || {}));
+      safeLocalWrite(TAGS_KEY, tagsCache);
+    } else if(tagRes.error){
+      console.error("Supabase tags load error", tagRes.error);
+    }
+  }catch(e){
+    console.error("Supabase init error", e);
+    showToast("לא הצלחתי לטעון מהענן - עובד מגיבוי מקומי");
+  }
+}
+
+function loadSaved(){ return savedCache.slice(); }
+function persistSaved(a){
+  savedCache = JSON.parse(JSON.stringify(a || []));
+  const ok = safeLocalWrite(LS_KEY, savedCache);
+  syncVehiclesToSupabase(savedCache);
+  return ok;
+}
+async function syncVehiclesToSupabase(a){
+  if(!sb) return;
+  try{
+    const rows = (a || []).map(v => ({ id:String(v.id), data:v, saved_at:v.savedAt || Date.now() }));
+    if(rows.length){
+      const { error } = await sb.from("vehicles").upsert(rows, { onConflict:"id" });
+      if(error) throw error;
+    }
+    const existing = await sb.from("vehicles").select("id");
+    if(!existing.error && Array.isArray(existing.data)){
+      const wanted = new Set(rows.map(r => r.id));
+      const toDelete = existing.data.map(r => r.id).filter(id => !wanted.has(id));
+      for(const id of toDelete){ await sb.from("vehicles").delete().eq("id", id); }
+    }
+  }catch(e){ console.error("Supabase vehicles sync error", e); showToast("שמירה בענן נכשלה - נשמר מקומית"); }
+}
+
+/* ===================== מאגר תגים - Supabase + גיבוי מקומי ===================== */
+function loadTags(){ return tagsCache.slice(); }
+function persistTags(a){
+  tagsCache = JSON.parse(JSON.stringify(a || []));
+  const ok = safeLocalWrite(TAGS_KEY, tagsCache);
+  syncTagsToSupabase(tagsCache);
+  return ok;
+}
+async function syncTagsToSupabase(a){
+  if(!sb) return;
+  try{
+    const rows = (a || []).map(t => ({ id:String(t.id), data:t }));
+    if(rows.length){
+      const { error } = await sb.from("tags").upsert(rows, { onConflict:"id" });
+      if(error) throw error;
+    }
+    const existing = await sb.from("tags").select("id");
+    if(!existing.error && Array.isArray(existing.data)){
+      const wanted = new Set(rows.map(r => r.id));
+      const toDelete = existing.data.map(r => r.id).filter(id => !wanted.has(id));
+      for(const id of toDelete){ await sb.from("tags").delete().eq("id", id); }
+    }
+  }catch(e){ console.error("Supabase tags sync error", e); showToast("שמירת תגיות בענן נכשלה - נשמר מקומית"); }
+}
 function tagById(id){ return loadTags().find(t=>t.id===id); }
 function createTag(name, color){
   name=(name||"").trim(); if(!name) return null;
@@ -1284,7 +1377,8 @@ function buildPin(){
 buildPin();
 if(checkAuth()){ document.getElementById('pinScreen').style.display='none'; init(); }
 
-function init(){
+async function init(){
+  await initSupabaseStorage();
   document.getElementById("fetchAll").querySelector(".ico").innerHTML=REFRESH_SVG;
   document.getElementById("carName").oninput   = e=> state.carName=e.target.value;
   document.getElementById("chassis").oninput   = e=> state.chassis=e.target.value;
