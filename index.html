@@ -399,8 +399,8 @@ textarea.inp{resize:vertical;min-height:62px;line-height:1.5}
     </div>
     <div class="deliv-bar">
       <div class="vm-seg">
-        <button class="vm-btn active" id="vmList">לפי תאריך</button>
-        <button class="vm-btn" id="vmGroup">לפי סטטוס</button>
+        <button class="vm-btn" id="vmList">לפי תאריך</button>
+        <button class="vm-btn active" id="vmGroup">לפי סטטוס</button>
       </div>
       <span class="deliv-spacer"></span>
       <label class="sw sw-sm"><input type="checkbox" id="showDelivered" /><span class="track"></span><span class="knob"></span></label>
@@ -653,7 +653,8 @@ let fetching = {};
 let lineOuts = [];        // הפניות לשדות ה"בש״ח" בכל שורה לעדכון מהיר
 let homeFilter = null;    // סינון מסך הבית לפי תג (null = הכל)
 let showDelivered = false; // האם להציג רכבים שנמסרו במסך הבית
-let homeGrouped = false;   // תצוגה: false=לפי תאריך, true=לפי סטטוס
+let homeGrouped = true;    // תצוגה: false=לפי תאריך, true=לפי סטטוס (ברירת מחדל)
+const GROUP_ORDER = ['in_transit','purchased','price_check','delivered']; // סדר תצוגת קבוצות
 let tagPickerOpen = false;
 let homeTagPickerFor = null;  // id הרכב שבורר התגים שלו פתוח במסך הבית
 let newTagColor = TAG_COLORS[0];  // צבע נבחר ליצירת תג חדש
@@ -1015,8 +1016,9 @@ function renderHome(){
     wrap.appendChild(e); return;
   }
   if(homeGrouped){
-    STATUSES.forEach(s=>{
-      const group=arr.filter(v=>vehStatus(v)===s.id);
+    GROUP_ORDER.forEach(sid=>{
+      const s=statusById(sid);
+      const group=arr.filter(v=>vehStatus(v)===sid);
       if(!group.length) return;
       const gh=document.createElement("div"); gh.className="vc-group-head"; gh.style.setProperty('--sc',s.color);
       const dot=document.createElement("span"); dot.className="vcg-dot"; gh.appendChild(dot);
