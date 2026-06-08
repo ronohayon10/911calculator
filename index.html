@@ -105,6 +105,20 @@ body{
 .vcard.delivered{border-color:rgba(52,211,153,.32)}
 .deliv-bar{display:flex;align-items:center;gap:9px;margin-bottom:14px}
 .deliv-lab{font-size:13px;color:#9097a6}
+.tp-tool{margin-top:10px}
+.tp-toggle{width:100%;background:#16181e;border:1px dashed #3a4250;color:#9aa0b0;border-radius:9px;padding:9px;font-family:'Heebo';font-size:13px;cursor:pointer;transition:.12s}
+.tp-toggle:hover,.tp-toggle.open{border-color:#f59e0b;color:#f59e0b}
+.tp-body{margin-top:10px;background:#0e1015;border:1px solid #262a33;border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.tp-row{display:flex;gap:8px}
+.tp-input{flex:1}
+.tp-unit{display:flex;background:#16181e;border:1px solid #2d323d;border-radius:8px;padding:3px;gap:3px;flex:none}
+.tp-u{background:transparent;border:none;color:#9097a6;border-radius:6px;padding:6px 13px;font-size:14px;font-weight:600;cursor:pointer;transition:.12s}
+.tp-u.active{background:#f59e0b;color:#1a1205}
+.tp-result{font-size:13px;color:#cfd3de;text-align:center;line-height:1.7}
+.tp-result b{color:#f59e0b;font-family:'Rubik';font-size:16px}
+.tp-result .tp-sub{font-size:11.5px;color:#8b90a0}
+.tp-apply{background:#f59e0b;color:#1a1205;border:none;border-radius:8px;padding:10px;font-family:'Rubik';font-weight:700;font-size:13px;cursor:pointer}
+.tp-apply:hover{background:#fbb43a}
 .deliv-bar{flex-wrap:wrap}
 .deliv-spacer{flex:1;min-width:8px}
 .vm-seg{display:inline-flex;background:#16181e;border:1px solid #262a33;border-radius:9px;padding:3px;gap:3px}
@@ -485,6 +499,20 @@ textarea.inp{resize:vertical;min-height:62px;line-height:1.5}
           <div class="sum-total"><span class="k" id="totalLabel">סה״כ עלות</span><span class="v" id="totalCost">—</span></div>
           <div id="totalAltRow"></div>
           <label class="mt-sale"><div class="fld-l">מחיר מכירה (₪)</div><input class="inp num" type="number" id="salePrice" /></label>
+          <div class="tp-tool">
+            <button class="tp-toggle" id="tpToggle">🎯 חשב מחיר לפי רווח יעד</button>
+            <div class="tp-body" id="tpBody" style="display:none">
+              <div class="tp-row">
+                <input class="inp num tp-input" type="number" id="tpValue" placeholder="רווח רצוי" />
+                <div class="tp-unit">
+                  <button class="tp-u active" id="tpPct">%</button>
+                  <button class="tp-u" id="tpIls">₪</button>
+                </div>
+              </div>
+              <div class="tp-result" id="tpResult">הזן רווח רצוי</div>
+              <button class="tp-apply" id="tpApply">החל כמחיר מכירה</button>
+            </div>
+          </div>
           <div class="vat-toggle">
             <span class="lab">מחיר המכירה כולל מע״מ (<span id="vatLabel">18</span>%)</span>
             <label class="sw"><input type="checkbox" id="vatOn" /><span class="track"></span><span class="knob"></span></label>
@@ -1571,6 +1599,40 @@ function setupPinScreen(){
 
 setupPinScreen();
 
+let tpMode = 'pct'; // 'pct' או 'ils'
+function computeTargetPrice(){
+  const t = calc();
+  const cost = t.costForProfit;
+  const raw = parseFloat(document.getElementById('tpValue').value);
+  const resEl = document.getElementById('tpResult');
+  if(cost<=0){ resEl.textContent='הזן קודם עלויות'; return null; }
+  if(!isFinite(raw)){ resEl.textContent='הזן רווח רצוי'; return null; }
+  const targetProfit = tpMode==='pct' ? cost*(raw/100) : raw;
+  const saleNet = cost + targetProfit;
+  const sale = state.vatOn ? saleNet*(1+VAT_RATE/100) : saleNet;
+  const pctTxt = tpMode==='pct' ? raw : (cost>0?(targetProfit/cost*100):0);
+  resEl.innerHTML = 'מחיר מכירה נדרש: <b>'+fmt(sale)+' ₪</b>' + (state.vatOn?' (כולל מע״מ)':'') +
+                    '<br><span class="tp-sub">רווח '+fmt(targetProfit)+' ₪ · '+fmt(pctTxt,1)+'%</span>';
+  return sale;
+}
+function setupTargetProfit(){
+  const toggle=document.getElementById('tpToggle');
+  const body=document.getElementById('tpBody');
+  const val=document.getElementById('tpValue');
+  const pctBtn=document.getElementById('tpPct');
+  const ilsBtn=document.getElementById('tpIls');
+  const applyBtn=document.getElementById('tpApply');
+  if(!toggle) return;
+  toggle.onclick=()=>{ const open=body.style.display==='none'; body.style.display=open?'block':'none'; toggle.classList.toggle('open',open); if(open) computeTargetPrice(); };
+  val.oninput=computeTargetPrice;
+  pctBtn.onclick=()=>{ tpMode='pct'; pctBtn.classList.add('active'); ilsBtn.classList.remove('active'); computeTargetPrice(); };
+  ilsBtn.onclick=()=>{ tpMode='ils'; ilsBtn.classList.add('active'); pctBtn.classList.remove('active'); computeTargetPrice(); };
+  applyBtn.onclick=()=>{
+    const sale=computeTargetPrice();
+    if(sale!=null){ const r=Math.round(sale); state.salePrice=r; document.getElementById('salePrice').value=r; update(); body.style.display='none'; toggle.classList.remove('open'); showToast('מחיר המכירה עודכן'); }
+  };
+}
+
 async function init(){
   await initSupabaseStorage();
   document.getElementById("fetchAll").querySelector(".ico").innerHTML=REFRESH_SVG;
@@ -1593,6 +1655,7 @@ async function init(){
   document.getElementById("vmList").onclick = ()=>{ homeGrouped=false; document.getElementById("vmList").classList.add("active"); document.getElementById("vmGroup").classList.remove("active"); renderHome(); };
   document.getElementById("vmGroup").onclick = ()=>{ homeGrouped=true; document.getElementById("vmGroup").classList.add("active"); document.getElementById("vmList").classList.remove("active"); renderHome(); };
   document.getElementById("rbHeader").onclick = ()=>{ ratesBarOpen=!ratesBarOpen; renderRatesBar(); };
+  setupTargetProfit();
   placeRatesBar();
   window.addEventListener('resize', placeRatesBar);
   document.getElementById("backBtn").onclick   = backFromEdit;
