@@ -645,6 +645,7 @@ const STATUSES = [
   {id:'price_check', label:'בדיקת מחיר', color:'#f87171'},
   {id:'purchased',   label:'נקנה',       color:'#60a5fa'},
   {id:'in_transit',  label:'בדרך לארץ',  color:'#f59e0b'},
+  {id:'in_stock',    label:'במלאי',      color:'#2dd4bf'},
   {id:'delivered',   label:'נמסר',       color:'#34d399'}
 ];
 function statusById(id){ return STATUSES.find(s=>s.id===id) || STATUSES[0]; }
@@ -682,7 +683,7 @@ let lineOuts = [];        // הפניות לשדות ה"בש״ח" בכל שור�
 let homeFilter = null;    // סינון מסך הבית לפי תג (null = הכל)
 let showDelivered = false; // האם להציג רכבים שנמסרו במסך הבית
 let homeGrouped = true;    // תצוגה: false=לפי תאריך, true=לפי סטטוס (ברירת מחדל)
-const GROUP_ORDER = ['in_transit','purchased','price_check','delivered']; // סדר תצוגת קבוצות
+const GROUP_ORDER = ['in_stock','in_transit','purchased','price_check','delivered']; // סדר תצוגת קבוצות
 let tagPickerOpen = false;
 let homeTagPickerFor = null;  // id הרכב שבורר התגים שלו פתוח במסך הבית
 let newTagColor = TAG_COLORS[0];  // צבע נבחר ליצירת תג חדש
